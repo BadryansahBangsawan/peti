@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Hook symbol</title>
+  <!-- Shorter point, then a 45 degree barb, so it is a hook and not a u. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"
+        d="M 192 52 L 192 148 A 52 52 0 0 1 88 148 L 88 120 L 60 92"/>
+</svg>

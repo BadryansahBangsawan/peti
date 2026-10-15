@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Becket symbol</title>
+  <!-- Geometric B. Upper bowl closes; lower bowl stops short of the stem so a line can slip in. Stroke is exploration. -->
+  <g fill="none" stroke="#141414" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="52" d="M 74 40 V 216"/>
+    <path stroke-width="48" d="M 74 62 A 50 50 0 0 1 74 162"/>
+    <path stroke-width="48" d="M 74 148 A 64 70 0 0 1 168 208"/>
+  </g>
+</svg>

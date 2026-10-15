@@ -1,0 +1,505 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T00:30:55.407478+00:00",
+  "title": "Design System: Peti",
+  "extensions": {
+    "colorMeta": {
+      "peti-bg": {
+        "role": "neutral",
+        "displayName": "Canvas / Light",
+        "tonalRamp": [
+          "oklch(15% 0.00000 0.00)",
+          "oklch(26% 0.00000 0.00)",
+          "oklch(38% 0.00000 0.00)",
+          "oklch(49% 0.00000 0.00)",
+          "oklch(61% 0.00000 0.00)",
+          "oklch(72% 0.00000 0.00)",
+          "oklch(84% 0.00000 0.00)",
+          "oklch(95% 0.00000 0.00)"
+        ]
+      },
+      "peti-bg-dark": {
+        "role": "neutral",
+        "displayName": "Canvas / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.00426 264.47)",
+          "oklch(26% 0.00426 264.47)",
+          "oklch(38% 0.00426 264.47)",
+          "oklch(49% 0.00426 264.47)",
+          "oklch(61% 0.00426 264.47)",
+          "oklch(72% 0.00426 264.47)",
+          "oklch(84% 0.00426 264.47)",
+          "oklch(95% 0.00426 264.47)"
+        ]
+      },
+      "peti-side": {
+        "role": "neutral",
+        "displayName": "Cool sidebar / Light",
+        "tonalRamp": [
+          "oklch(15% 0.00171 247.84)",
+          "oklch(26% 0.00171 247.84)",
+          "oklch(38% 0.00171 247.84)",
+          "oklch(49% 0.00171 247.84)",
+          "oklch(61% 0.00171 247.84)",
+          "oklch(72% 0.00171 247.84)",
+          "oklch(84% 0.00171 247.84)",
+          "oklch(95% 0.00171 247.84)"
+        ]
+      },
+      "peti-side-dark": {
+        "role": "neutral",
+        "displayName": "Cool sidebar / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.00439 264.46)",
+          "oklch(26% 0.00439 264.46)",
+          "oklch(38% 0.00439 264.46)",
+          "oklch(49% 0.00439 264.46)",
+          "oklch(61% 0.00439 264.46)",
+          "oklch(72% 0.00439 264.46)",
+          "oklch(84% 0.00439 264.46)",
+          "oklch(95% 0.00439 264.46)"
+        ]
+      },
+      "peti-panel": {
+        "role": "neutral",
+        "displayName": "Quiet surface / Light",
+        "tonalRamp": [
+          "oklch(15% 0.00171 247.84)",
+          "oklch(26% 0.00171 247.84)",
+          "oklch(38% 0.00171 247.84)",
+          "oklch(49% 0.00171 247.84)",
+          "oklch(61% 0.00171 247.84)",
+          "oklch(72% 0.00171 247.84)",
+          "oklch(84% 0.00171 247.84)",
+          "oklch(95% 0.00171 247.84)"
+        ]
+      },
+      "peti-panel-dark": {
+        "role": "neutral",
+        "displayName": "Quiet surface / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.00645 258.36)",
+          "oklch(26% 0.00645 258.36)",
+          "oklch(38% 0.00645 258.36)",
+          "oklch(49% 0.00645 258.36)",
+          "oklch(61% 0.00645 258.36)",
+          "oklch(72% 0.00645 258.36)",
+          "oklch(84% 0.00645 258.36)",
+          "oklch(95% 0.00645 258.36)"
+        ]
+      },
+      "peti-text": {
+        "role": "neutral",
+        "displayName": "Reading ink / Light",
+        "tonalRamp": [
+          "oklch(15% 0.01214 264.33)",
+          "oklch(26% 0.01214 264.33)",
+          "oklch(38% 0.01214 264.33)",
+          "oklch(49% 0.01214 264.33)",
+          "oklch(61% 0.01214 264.33)",
+          "oklch(72% 0.01214 264.33)",
+          "oklch(84% 0.01214 264.33)",
+          "oklch(95% 0.01214 264.33)"
+        ]
+      },
+      "peti-text-dark": {
+        "role": "neutral",
+        "displayName": "Reading ink / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.00288 264.54)",
+          "oklch(26% 0.00288 264.54)",
+          "oklch(38% 0.00288 264.54)",
+          "oklch(49% 0.00288 264.54)",
+          "oklch(61% 0.00288 264.54)",
+          "oklch(72% 0.00288 264.54)",
+          "oklch(84% 0.00288 264.54)",
+          "oklch(95% 0.00288 264.54)"
+        ]
+      },
+      "peti-muted": {
+        "role": "neutral",
+        "displayName": "Secondary ink / Light",
+        "tonalRamp": [
+          "oklch(15% 0.01793 257.24)",
+          "oklch(26% 0.01793 257.24)",
+          "oklch(38% 0.01793 257.24)",
+          "oklch(49% 0.01793 257.24)",
+          "oklch(61% 0.01793 257.24)",
+          "oklch(72% 0.01793 257.24)",
+          "oklch(84% 0.01793 257.24)",
+          "oklch(95% 0.01793 257.24)"
+        ]
+      },
+      "peti-muted-dark": {
+        "role": "neutral",
+        "displayName": "Secondary ink / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.01644 257.21)",
+          "oklch(26% 0.01644 257.21)",
+          "oklch(38% 0.01644 257.21)",
+          "oklch(49% 0.01644 257.21)",
+          "oklch(61% 0.01644 257.21)",
+          "oklch(72% 0.01644 257.21)",
+          "oklch(84% 0.01644 257.21)",
+          "oklch(95% 0.01644 257.21)"
+        ]
+      },
+      "peti-line": {
+        "role": "neutral",
+        "displayName": "Boundary / Light",
+        "tonalRamp": [
+          "oklch(15% 0.00580 264.53)",
+          "oklch(26% 0.00580 264.53)",
+          "oklch(38% 0.00580 264.53)",
+          "oklch(49% 0.00580 264.53)",
+          "oklch(61% 0.00580 264.53)",
+          "oklch(72% 0.00580 264.53)",
+          "oklch(84% 0.00580 264.53)",
+          "oklch(95% 0.00580 264.53)"
+        ]
+      },
+      "peti-line-dark": {
+        "role": "neutral",
+        "displayName": "Boundary / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.00982 260.71)",
+          "oklch(26% 0.00982 260.71)",
+          "oklch(38% 0.00982 260.71)",
+          "oklch(49% 0.00982 260.71)",
+          "oklch(61% 0.00982 260.71)",
+          "oklch(72% 0.00982 260.71)",
+          "oklch(84% 0.00982 260.71)",
+          "oklch(95% 0.00982 260.71)"
+        ]
+      },
+      "peti-select": {
+        "role": "neutral",
+        "displayName": "Selected surface / Light",
+        "tonalRamp": [
+          "oklch(15% 0.00629 255.48)",
+          "oklch(26% 0.00629 255.48)",
+          "oklch(38% 0.00629 255.48)",
+          "oklch(49% 0.00629 255.48)",
+          "oklch(61% 0.00629 255.48)",
+          "oklch(72% 0.00629 255.48)",
+          "oklch(84% 0.00629 255.48)",
+          "oklch(95% 0.00629 255.48)"
+        ]
+      },
+      "peti-select-dark": {
+        "role": "neutral",
+        "displayName": "Selected surface / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.01002 260.71)",
+          "oklch(26% 0.01002 260.71)",
+          "oklch(38% 0.01002 260.71)",
+          "oklch(49% 0.01002 260.71)",
+          "oklch(61% 0.01002 260.71)",
+          "oklch(72% 0.01002 260.71)",
+          "oklch(84% 0.01002 260.71)",
+          "oklch(95% 0.01002 260.71)"
+        ]
+      },
+      "peti-ink": {
+        "role": "primary",
+        "displayName": "Action graphite / Light",
+        "tonalRamp": [
+          "oklch(15% 0.01020 260.70)",
+          "oklch(26% 0.01020 260.70)",
+          "oklch(38% 0.01020 260.70)",
+          "oklch(49% 0.01020 260.70)",
+          "oklch(61% 0.01020 260.70)",
+          "oklch(72% 0.01020 260.70)",
+          "oklch(84% 0.01020 260.70)",
+          "oklch(95% 0.01020 260.70)"
+        ]
+      },
+      "peti-ink-dark": {
+        "role": "primary",
+        "displayName": "Action graphite / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.00343 247.86)",
+          "oklch(26% 0.00343 247.86)",
+          "oklch(38% 0.00343 247.86)",
+          "oklch(49% 0.00343 247.86)",
+          "oklch(61% 0.00343 247.86)",
+          "oklch(72% 0.00343 247.86)",
+          "oklch(84% 0.00343 247.86)",
+          "oklch(95% 0.00343 247.86)"
+        ]
+      },
+      "peti-inverse": {
+        "role": "neutral",
+        "displayName": "Action contrast / Light",
+        "tonalRamp": [
+          "oklch(15% 0.00000 0.00)",
+          "oklch(26% 0.00000 0.00)",
+          "oklch(38% 0.00000 0.00)",
+          "oklch(49% 0.00000 0.00)",
+          "oklch(61% 0.00000 0.00)",
+          "oklch(72% 0.00000 0.00)",
+          "oklch(84% 0.00000 0.00)",
+          "oklch(95% 0.00000 0.00)"
+        ]
+      },
+      "peti-inverse-dark": {
+        "role": "neutral",
+        "displayName": "Action contrast / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.00667 258.37)",
+          "oklch(26% 0.00667 258.37)",
+          "oklch(38% 0.00667 258.37)",
+          "oklch(49% 0.00667 258.37)",
+          "oklch(61% 0.00667 258.37)",
+          "oklch(72% 0.00667 258.37)",
+          "oklch(84% 0.00667 258.37)",
+          "oklch(95% 0.00667 258.37)"
+        ]
+      },
+      "peti-green": {
+        "role": "secondary",
+        "displayName": "Transfer green / Light",
+        "tonalRamp": [
+          "oklch(15% 0.09142 163.28)",
+          "oklch(26% 0.09142 163.28)",
+          "oklch(38% 0.09142 163.28)",
+          "oklch(49% 0.09142 163.28)",
+          "oklch(61% 0.09142 163.28)",
+          "oklch(72% 0.09142 163.28)",
+          "oklch(84% 0.09142 163.28)",
+          "oklch(95% 0.09142 163.28)"
+        ]
+      },
+      "peti-green-dark": {
+        "role": "secondary",
+        "displayName": "Transfer green / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.09454 161.69)",
+          "oklch(26% 0.09454 161.69)",
+          "oklch(38% 0.09454 161.69)",
+          "oklch(49% 0.09454 161.69)",
+          "oklch(61% 0.09454 161.69)",
+          "oklch(72% 0.09454 161.69)",
+          "oklch(84% 0.09454 161.69)",
+          "oklch(95% 0.09454 161.69)"
+        ]
+      },
+      "peti-green-bg": {
+        "role": "secondary",
+        "displayName": "Transfer green surface / Light",
+        "tonalRamp": [
+          "oklch(15% 0.01322 159.91)",
+          "oklch(26% 0.01322 159.91)",
+          "oklch(38% 0.01322 159.91)",
+          "oklch(49% 0.01322 159.91)",
+          "oklch(61% 0.01322 159.91)",
+          "oklch(72% 0.01322 159.91)",
+          "oklch(84% 0.01322 159.91)",
+          "oklch(95% 0.01322 159.91)"
+        ]
+      },
+      "peti-green-bg-dark": {
+        "role": "secondary",
+        "displayName": "Transfer green surface / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.03806 162.42)",
+          "oklch(26% 0.03806 162.42)",
+          "oklch(38% 0.03806 162.42)",
+          "oklch(49% 0.03806 162.42)",
+          "oklch(61% 0.03806 162.42)",
+          "oklch(72% 0.03806 162.42)",
+          "oklch(84% 0.03806 162.42)",
+          "oklch(95% 0.03806 162.42)"
+        ]
+      },
+      "peti-red": {
+        "role": "tertiary",
+        "displayName": "Recovery red / Light",
+        "tonalRamp": [
+          "oklch(15% 0.13576 22.90)",
+          "oklch(26% 0.13576 22.90)",
+          "oklch(38% 0.13576 22.90)",
+          "oklch(49% 0.13576 22.90)",
+          "oklch(61% 0.13576 22.90)",
+          "oklch(72% 0.13576 22.90)",
+          "oklch(84% 0.13576 22.90)",
+          "oklch(95% 0.13576 22.90)"
+        ]
+      },
+      "peti-red-dark": {
+        "role": "tertiary",
+        "displayName": "Recovery red / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.09573 19.44)",
+          "oklch(26% 0.09573 19.44)",
+          "oklch(38% 0.09573 19.44)",
+          "oklch(49% 0.09573 19.44)",
+          "oklch(61% 0.09573 19.44)",
+          "oklch(72% 0.09573 19.44)",
+          "oklch(84% 0.09573 19.44)",
+          "oklch(95% 0.09573 19.44)"
+        ]
+      },
+      "peti-red-bg": {
+        "role": "tertiary",
+        "displayName": "Recovery red surface / Light",
+        "tonalRamp": [
+          "oklch(15% 0.01522 22.39)",
+          "oklch(26% 0.01522 22.39)",
+          "oklch(38% 0.01522 22.39)",
+          "oklch(49% 0.01522 22.39)",
+          "oklch(61% 0.01522 22.39)",
+          "oklch(72% 0.01522 22.39)",
+          "oklch(84% 0.01522 22.39)",
+          "oklch(95% 0.01522 22.39)"
+        ]
+      },
+      "peti-red-bg-dark": {
+        "role": "tertiary",
+        "displayName": "Recovery red surface / Dark",
+        "tonalRamp": [
+          "oklch(15% 0.03490 13.64)",
+          "oklch(26% 0.03490 13.64)",
+          "oklch(38% 0.03490 13.64)",
+          "oklch(49% 0.03490 13.64)",
+          "oklch(61% 0.03490 13.64)",
+          "oklch(72% 0.03490 13.64)",
+          "oklch(84% 0.03490 13.64)",
+          "oklch(95% 0.03490 13.64)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Page heading",
+        "purpose": "Application page titles."
+      },
+      "mono": {
+        "displayName": "Repository data",
+        "purpose": "URLs and device authorization codes only."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "state-transition-min",
+        "value": "100ms",
+        "purpose": "Lower bound of system-board transition guidance; implementation intent."
+      },
+      {
+        "name": "state-transition-max",
+        "value": "150ms",
+        "purpose": "Upper bound; respect reduced motion. No runtime motion was tested."
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Button / Primary",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Canvas specimen; visible keyboard focus mirrors the authored focus control.",
+      "html": "<button class=\"ds-btn-primary\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>Tambah ke antrean</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; background:#25282D; color:#FFFFFF; border:none; border-radius:8px; font-family:Geist,sans-serif; font-size:13px; font-weight:500; } .ds-btn-primary:hover { background:#25282D; } .ds-btn-primary:focus-visible { outline:2px solid #202329; outline-offset:0; }"
+    },
+    {
+      "name": "Button / Secondary",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Canvas specimen; visible keyboard focus mirrors the authored focus control.",
+      "html": "<button class=\"ds-btn-secondary\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"><path d=\"M6 14l1.5-3h14l-3 9H3V4h6l2 3h8v4\"/></svg>Buka folder</button>",
+      "css": ".ds-btn-secondary { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; background:#FFFFFF; color:#202329; border:1px solid #E7E9ED; border-radius:8px; font-family:Geist,sans-serif; font-size:13px; font-weight:500; } .ds-btn-secondary:hover { background:#FFFFFF; } .ds-btn-secondary:focus-visible { outline:2px solid #202329; outline-offset:0; }"
+    },
+    {
+      "name": "Button / Focus",
+      "kind": "button",
+      "refersTo": "button-focus",
+      "description": "Canvas specimen; visible keyboard focus mirrors the authored focus control.",
+      "html": "<button class=\"ds-btn-focus\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>Fokus keyboard</button>",
+      "css": ".ds-btn-focus { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; background:#FFFFFF; color:#202329; border:1px solid #E7E9ED; border-radius:8px; font-family:Geist,sans-serif; font-size:13px; font-weight:500; } .ds-btn-focus:hover { background:#FFFFFF; } .ds-btn-focus:focus-visible { outline:2px solid #202329; outline-offset:0; } .ds-btn-focus { outline:2px solid #202329; outline-offset:0; }"
+    },
+    {
+      "name": "Button / Disabled",
+      "kind": "button",
+      "refersTo": "button-disabled",
+      "description": "Canvas specimen; hover retains the authored resting appearance. Disabled opacity is illustrative.",
+      "html": "<button class=\"ds-btn-disabled\" disabled><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>Tambahkan repo</button>",
+      "css": ".ds-btn-disabled { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; background:#25282D; color:#FFFFFF; border:none; border-radius:8px; font-family:Geist,sans-serif; font-size:13px; font-weight:500; } .ds-btn-disabled:hover { background:#25282D; } .ds-btn-disabled:focus-visible { outline:2px solid #202329; outline-offset:0; } .ds-btn-disabled { opacity:0.4; }"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Discover search visual specimen.",
+      "html": "<label class=\"ds-search\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input aria-label=\"Cari repository\" placeholder=\"Cari nama repo, pemilik, atau topik…\"></label>",
+      "css": ".ds-search { display:flex; align-items:center; gap:10px; height:44px; padding:0 14px; background:#FFFFFF; color:#646B75; border:1px solid #E7E9ED; border-radius:8px; } .ds-search input { width:320px; padding:0; border:0; outline:0; background:transparent; color:#202329; font-family:Geist,sans-serif; font-size:13px; } .ds-search input::placeholder { color:#646B75; } .ds-search:focus-within { outline:2px solid #202329; outline-offset:0; }"
+    },
+    {
+      "name": "Selected destination",
+      "kind": "nav",
+      "refersTo": "navigation-selected",
+      "description": "Desktop selected Downloads destination, with count.",
+      "html": "<a class=\"ds-nav\" href=\"#downloads\" aria-current=\"page\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3v12m-5-5 5 5 5-5M5 21h14\"/></svg><span>Downloads</span><span class=\"ds-nav-count\">5</span></a>",
+      "css": ".ds-nav { display:flex; align-items:center; gap:11px; width:164px; height:42px; padding:0 12px; border-radius:8px; background:#E8EBEF; color:#202329; font-family:Geist,sans-serif; font-size:14px; font-weight:600; text-decoration:none; } .ds-nav-count { margin-left:auto; padding:4px 8px; border-radius:5px; background:#F8F9FA; color:#646B75; font-size:12px; font-weight:500; } .ds-nav:hover { background:#E8EBEF; } .ds-nav:focus-visible { outline:2px solid #202329; outline-offset:0; }"
+    },
+    {
+      "name": "Transfer status",
+      "kind": "chip",
+      "refersTo": "chip-transfer",
+      "description": "A noninteractive state label; meaning is carried by text and color.",
+      "html": "<span class=\"ds-chip\">Mengunduh</span>",
+      "css": ".ds-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:5px; background:#EAF4EE; color:#247354; font-family:Geist,sans-serif; font-size:12px; font-weight:500; }"
+    },
+    {
+      "name": "Quiet panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Summary/action surface with an authored flat treatment.",
+      "html": "<section class=\"ds-panel\"><strong>Antrean unduhan</strong><p>Status transfer dan tindakan berikutnya.</p></section>",
+      "css": ".ds-panel { width:330px; padding:24px; border-radius:12px; background:#F8F9FA; color:#202329; font-family:Geist,sans-serif; font-size:13px; } .ds-panel strong { font-weight:600; } .ds-panel p { margin:12px 0 0; color:#646B75; line-height:1.6; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Repository first",
+    "overview": "Peti is a quiet desktop workspace for selecting repositories and following transfers. Cool neutral surfaces, graphite actions and the original Slot symbol give the interface a precise, restrained character. Repository identity, current state and the next action stay easy to scan.\n\nThis record is extracted from the built editable canvas, its named variables and the interface-system export, rather than from running application styles. Light is the provisional primary presentation; a dark mode is also built. The direction is documented as authored, without implying a theme choice or visual approval from the user.",
+    "keyCharacteristics": [
+      "Solid cool neutrals and flat surfaces.",
+      "Geist for interface text; Geist Mono for URLs and device codes.",
+      "Repository rows own progress, status and actions.",
+      "Text and restrained semantic color explain outcomes."
+    ],
+    "rules": [
+      {
+        "name": "The Status Rule",
+        "body": "Use green and red to explain state alongside text; keep the primary action neutral.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Rule",
+        "body": "Reserve Geist Mono for repository URLs and device authorization codes.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Separate surfaces with tone, spacing and quiet borders; use no shadows or gradients.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the original Peti Slot geometry and product name.",
+      "Do reuse the canvas light/dark variables by semantic role.",
+      "Do preserve repository identity, status text and a clear next action.",
+      "Do derive known progress from bytes; show bytes and speed when size is unknown.",
+      "Do make fork actions explicit and identify the fork and actual local folder in results.",
+      "Do retain visible keyboard focus and respect reduced motion during implementation."
+    ],
+    "donts": [
+      "Don't add decorative shadows, gradients or replacement logo geometry.",
+      "Don't use monospace as the general interface typeface.",
+      "Don't communicate error, completion or selection with color alone.",
+      "Don't infer a responsive breakpoint or minimum window size from two canvas examples.",
+      "Don't treat canvas states or preview snippets as working controls or tested runtime behavior."
+    ]
+  }
+}

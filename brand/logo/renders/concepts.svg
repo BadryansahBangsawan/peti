@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="840" viewBox="0 0 1600 840"><defs><filter id="grey"><feColorMatrix type="saturate" values="0"/></filter></defs><rect width="1600" height="840" fill="#f7f7f4"/><text x="60" y="78" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#161616">Tiga arah logo</text><text x="60" y="116" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="20" fill="#6b6b6b">Abu-abu dulu. Pilih arah, atau sebut yang diubah.</text><rect x="60" y="150" width="474.667" height="630" rx="18" fill="#fff" stroke="#161616" stroke-width="2"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="90" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c0-title">Marl symbol</title>
+  <!-- M at 30 degrees from vertical. The valley is a rounded loop held above the feet. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"
+        d="M 60 207 V 49 L 128 167 L 196 49 V 207"/>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="90" y="516" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s064-title">Marl symbol</title>
+  <!-- M at 30 degrees from vertical. The valley is a rounded loop held above the feet. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"
+        d="M 60 207 V 49 L 128 167 L 196 49 V 207"/>
+</svg>
+</g><text x="122" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="180" y="548" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s032-title">Marl symbol</title>
+  <!-- M at 30 degrees from vertical. The valley is a rounded loop held above the feet. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"
+        d="M 60 207 V 49 L 128 167 L 196 49 V 207"/>
+</svg>
+</g><text x="196" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="238" y="564" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s016-title">Marl symbol</title>
+  <!-- M at 30 degrees from vertical. The valley is a rounded loop held above the feet. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"
+        d="M 60 207 V 49 L 128 167 L 196 49 V 207"/>
+</svg>
+</g><text x="246" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="90.0" y="636" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">A · Marl</text><text x="90.0" y="664" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#161616" letter-spacing="1.5">RECOMMENDED</text><text x="90.0" y="698" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">Banyak helai, satu benang. Lembah M tetap</text><text x="90.0" y="724" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">terbuka.</text><rect x="562.667" y="150" width="474.667" height="630" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="592.667" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c1-title">Slot symbol</title>
+  <!-- A solid rounded square with a slot cut into the top edge. -->
+  <path fill="#141414" fill-rule="evenodd"
+        d="M 88 44 H 168 A 44 44 0 0 1 212 88 V 168 A 44 44 0 0 1 168 212 H 88 A 44 44 0 0 1 44 168 V 88 A 44 44 0 0 1 88 44 Z
+           M 104 44 V 96 A 24 24 0 0 0 152 96 V 44 Z"/>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="592.667" y="516" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s164-title">Slot symbol</title>
+  <!-- A solid rounded square with a slot cut into the top edge. -->
+  <path fill="#141414" fill-rule="evenodd"
+        d="M 88 44 H 168 A 44 44 0 0 1 212 88 V 168 A 44 44 0 0 1 168 212 H 88 A 44 44 0 0 1 44 168 V 88 A 44 44 0 0 1 88 44 Z
+           M 104 44 V 96 A 24 24 0 0 0 152 96 V 44 Z"/>
+</svg>
+</g><text x="624.667" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="682.667" y="548" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s132-title">Slot symbol</title>
+  <!-- A solid rounded square with a slot cut into the top edge. -->
+  <path fill="#141414" fill-rule="evenodd"
+        d="M 88 44 H 168 A 44 44 0 0 1 212 88 V 168 A 44 44 0 0 1 168 212 H 88 A 44 44 0 0 1 44 168 V 88 A 44 44 0 0 1 88 44 Z
+           M 104 44 V 96 A 24 24 0 0 0 152 96 V 44 Z"/>
+</svg>
+</g><text x="698.667" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="740.667" y="564" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s116-title">Slot symbol</title>
+  <!-- A solid rounded square with a slot cut into the top edge. -->
+  <path fill="#141414" fill-rule="evenodd"
+        d="M 88 44 H 168 A 44 44 0 0 1 212 88 V 168 A 44 44 0 0 1 168 212 H 88 A 44 44 0 0 1 44 168 V 88 A 44 44 0 0 1 88 44 Z
+           M 104 44 V 96 A 24 24 0 0 0 152 96 V 44 Z"/>
+</svg>
+</g><text x="748.667" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="592.6666666666667" y="636" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">B · Peti</text><text x="592.6666666666667" y="670" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">Satu celah di kotak: tempat repo mendarat.</text><rect x="1065.33" y="150" width="474.667" height="630" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="1095.33" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c2-title">Becket symbol</title>
+  <!-- Rope eye: the loop is round, one end stops, the other continues as the standing part. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="44" stroke-linecap="round"
+        d="M 67.4 165.4 A 74 74 0 1 1 197.5 148.3 L 197.5 207"/>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="1095.33" y="516" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s264-title">Becket symbol</title>
+  <!-- Rope eye: the loop is round, one end stops, the other continues as the standing part. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="44" stroke-linecap="round"
+        d="M 67.4 165.4 A 74 74 0 1 1 197.5 148.3 L 197.5 207"/>
+</svg>
+</g><text x="1127.33" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="1185.33" y="548" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s232-title">Becket symbol</title>
+  <!-- Rope eye: the loop is round, one end stops, the other continues as the standing part. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="44" stroke-linecap="round"
+        d="M 67.4 165.4 A 74 74 0 1 1 197.5 148.3 L 197.5 207"/>
+</svg>
+</g><text x="1201.33" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="1243.33" y="564" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s216-title">Becket symbol</title>
+  <!-- Rope eye: the loop is round, one end stops, the other continues as the standing part. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="44" stroke-linecap="round"
+        d="M 67.4 165.4 A 74 74 0 1 1 197.5 148.3 L 197.5 207"/>
+</svg>
+</g><text x="1251.33" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="1095.3333333333335" y="636" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">C · Kait</text><text x="1095.3333333333335" y="670" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">Kait berkaki panjang: diambil, lalu</text><text x="1095.3333333333335" y="696" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">tinggal.</text></svg>

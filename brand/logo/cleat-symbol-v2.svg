@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Cleat symbol</title>
+  <!-- Two horns standing on one bar. Horns overlap the bar so the three capsules read as one cleat. -->
+  <g fill="#141414">
+    <rect x="32" y="116" width="192" height="56" rx="28"/>
+    <rect x="32" y="40" width="56" height="132" rx="28"/>
+    <rect x="168" y="40" width="56" height="132" rx="28"/>
+  </g>
+</svg>

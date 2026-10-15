@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ribbon symbol</title>
+  <!-- Bookmark ribbon. The notch is 45 degrees. A place a repo is kept. -->
+  <path fill="#141414"
+        d="M 88 40 H 168 A 30 30 0 0 1 198 70 V 214 L 128 144 L 58 214 V 70 A 30 30 0 0 1 88 40 Z"/>
+</svg>

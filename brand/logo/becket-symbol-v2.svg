@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Becket symbol</title>
+  <!-- An eye of rope, open at the bottom so a line can slip in. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="60" stroke-linecap="round"
+        d="M 72.9 183.2 A 78 78 0 1 1 183.2 183.2"/>
+</svg>

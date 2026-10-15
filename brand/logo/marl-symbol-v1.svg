@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Marl symbol</title>
+  <!-- Centerline M at 30 degrees from vertical. Valley stops high: a loop of yarn, not a spike. Stroke is exploration; outline before a master. -->
+  <path fill="none" stroke="#141414" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"
+        d="M 61 214 V 44 L 128 160 L 195 44 V 214"/>
+</svg>

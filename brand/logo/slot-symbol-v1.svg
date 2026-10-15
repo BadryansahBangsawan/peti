@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Slot symbol</title>
+  <!-- A solid rounded square with a slot cut into the top edge. -->
+  <path fill="#141414" fill-rule="evenodd"
+        d="M 88 44 H 168 A 44 44 0 0 1 212 88 V 168 A 44 44 0 0 1 168 212 H 88 A 44 44 0 0 1 44 168 V 88 A 44 44 0 0 1 88 44 Z
+           M 104 44 V 96 A 24 24 0 0 0 152 96 V 44 Z"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Becket symbol</title>
+  <!-- Rope eye: the loop is round, one end stops, the other continues as the standing part. Stroke is exploration. -->
+  <path fill="none" stroke="#141414" stroke-width="44" stroke-linecap="round"
+        d="M 67.4 165.4 A 74 74 0 1 1 197.5 148.3 L 197.5 207"/>
+</svg>
