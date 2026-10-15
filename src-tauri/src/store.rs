@@ -273,6 +273,24 @@ impl Store {
         Ok(())
     }
 
+    pub fn dismiss_item(&self, id: i64) -> Result<(), StoreError> {
+        let conn = self.lock()?;
+        let changed = conn.execute(
+            "DELETE FROM queue WHERE id = ?1 AND status = 'dibatalkan'",
+            [id],
+        )?;
+        if changed == 1 {
+            return Ok(());
+        }
+        let status: Option<String> = conn
+            .query_row("SELECT status FROM queue WHERE id = ?1", [id], |row| row.get(0))
+            .optional()?;
+        match status {
+            None => Err(StoreError::Invalid("item antrean tidak ada")),
+            Some(_) => Err(StoreError::Invalid("hapus hanya untuk yang dibatalkan")),
+        }
+    }
+
     pub fn retry_item(&self, id: i64) -> Result<(), StoreError> {
         let conn = self.lock()?;
         let changed = conn.execute(

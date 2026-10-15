@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - name: Build
+        run: npm run tauri build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: Zip and upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          APP=$(ls -d src-tauri/target/release/bundle/macos/*.app)
+          BASE=$(basename "$APP")
+          ditto -c -k --keepParent "$APP" "$BASE.zip"
+          DMG=$(ls src-tauri/target/release/bundle/dmg/*.dmg)
+          TAG="$GITHUB_REF_NAME"
+          BUNDLE="src-tauri/target/release/bundle"
+          ARCHIVES=$(find "$BUNDLE" -type f -name '*.app.tar.gz' | sort)
+          SIGS=$(find "$BUNDLE" -type f -name '*.sig' | sort)
+          if [ -z "$ARCHIVES" ]; then
+            echo "updater archive was not created" >&2
+            exit 1
+          fi
+          if [ -z "$SIGS" ]; then
+            echo "updater signature was not created" >&2
+            exit 1
+          fi
+          MANIFEST=$(find "$BUNDLE" -type f -name 'latest.json' | sort | head -n 1)
+          if [ -z "$MANIFEST" ]; then
+            ARCHIVE=$(printf '%s\n' "$ARCHIVES" | grep -E 'aarch64|arm64' | head -n 1 || true)
+            if [ -z "$ARCHIVE" ]; then
+              ARCHIVE=$(printf '%s\n' "$ARCHIVES" | head -n 1)
+            fi
+            SIG="$ARCHIVE.sig"
+            if [ ! -f "$SIG" ]; then
+              echo "updater signature was not created" >&2
+              exit 1
+            fi
+            MANIFEST="${RUNNER_TEMP:-/tmp}/latest.json"
+            export TAG ARCHIVE SIG MANIFEST
+            export VERSION="${TAG#v}"
+            python3 -c 'import json, os, pathlib, urllib.parse; tag=os.environ["TAG"]; archive=os.environ["ARCHIVE"]; signature=pathlib.Path(os.environ["SIG"]).read_text().rstrip("\r\n"); filename=os.path.basename(archive); url="https://github.com/BadryansahBangsawan/peti/releases/download/%s/%s" % (tag, urllib.parse.quote(filename)); body={"version": os.environ["VERSION"], "platforms": {"darwin-aarch64": {"signature": signature, "url": url}}}; pathlib.Path(os.environ["MANIFEST"]).write_text(json.dumps(body, indent=2) + "\n")'
+          fi
+          ARGS=("$BASE.zip" "$DMG")
+          while IFS= read -r file; do
+            if [ -n "$file" ]; then
+              ARGS+=("$file")
+            fi
+          done < <(printf '%s\n' "$ARCHIVES"; printf '%s\n' "$SIGS"; printf '%s\n' "$MANIFEST")
+          gh release upload "$TAG" "${ARGS[@]}" --clobber || gh release create "$TAG" "${ARGS[@]}" --title "${TAG#v}" --generate-notes

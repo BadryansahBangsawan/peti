@@ -8,9 +8,54 @@ export const CONNECTED = "Terhubung";
 const NAME = /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9_-])?$/;
 const CODE = /^[A-Za-z0-9-]{4,20}$/;
 
+function hiddenChar(value: string): boolean {
+  for (const char of value) {
+    const code = char.codePointAt(0) ?? 0;
+    if (code <= 0x1f || code === 0x7f || (code >= 0x202a && code <= 0x202e) || (code >= 0x2066 && code <= 0x2069)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function shownName(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const name = value.trim();
+  if (name.length === 0 || name.length > 128 || hiddenChar(name)) {
+    return "";
+  }
+  return name;
+}
+
+function shownAvatar(value: unknown): string {
+  if (typeof value !== "string" || value.length === 0 || value.length > 512 || hiddenChar(value)) {
+    return "";
+  }
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "avatars.githubusercontent.com" ||
+      url.port !== "" ||
+      url.username !== "" ||
+      url.password !== "" ||
+      url.pathname.length < 2
+    ) {
+      return "";
+    }
+  } catch {
+    return "";
+  }
+  return value;
+}
+
 export type GithubView = {
   connected: boolean;
   login: string;
+  name: string;
+  avatarUrl: string;
   userCode: string;
   interval: number;
 };
@@ -44,7 +89,14 @@ export function readGithub(value: unknown): GithubView | null {
     interval =
       typeof raw === "number" && Number.isInteger(raw) && raw >= 5 && raw <= 3600 ? raw : 5;
   }
-  return { connected, login, userCode, interval };
+  return {
+    connected,
+    login,
+    name: connected ? shownName(body.name) : "",
+    avatarUrl: connected ? shownAvatar(body.avatarUrl) : "",
+    userCode,
+    interval,
+  };
 }
 
 export function githubMessage(err: unknown): string {

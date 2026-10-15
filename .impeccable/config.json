@@ -1,0 +1,29 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "site/unduh.html"
+        ],
+        "createdAt": "2026-10-15T13:28:53.316Z",
+        "reason": "Pencil frame MzPtz sets these colors: web-gray #536258 on paper and web-muted #AEB9B1 on #101412. The page must match that design."
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "createdAt": "2026-10-15T13:40:52.820Z",
+        "reason": "Pencil frames specify Geist and Geist Mono. The site matches that type on purpose."
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist mono",
+        "createdAt": "2026-10-15T13:40:52.843Z",
+        "reason": "Pencil frames specify Geist and Geist Mono. The site matches that type on purpose."
+      }
+    ]
+  }
+}

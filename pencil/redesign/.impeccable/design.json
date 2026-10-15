@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-15T00:30:55.407478+00:00",
+  "generatedAt": "2026-10-15T02:51:33.298561+00:00",
   "title": "Design System: Peti",
   "extensions": {
     "colorMeta": {
@@ -462,7 +462,7 @@
   ],
   "narrative": {
     "northStar": "Repository first",
-    "overview": "Peti is a quiet desktop workspace for selecting repositories and following transfers. Cool neutral surfaces, graphite actions and the original Slot symbol give the interface a precise, restrained character. Repository identity, current state and the next action stay easy to scan.\n\nThis record is extracted from the built editable canvas, its named variables and the interface-system export, rather than from running application styles. Light is the provisional primary presentation; a dark mode is also built. The direction is documented as authored, without implying a theme choice or visual approval from the user.",
+    "overview": "Peti is a quiet desktop workspace for selecting repositories and following transfers. Cool neutral surfaces, graphite actions and the original Slot symbol give the interface a precise, restrained character. Repository identity, current state and the next action stay easy to scan.\n\nThis record is extracted from the built editable canvas, its named variables and the interface-system export, rather than from running application styles. Light is the provisional primary presentation; all five destinations now also have dark specimens. The canvas contains 25 root frames: 22 app screens/variants and three reference boards. The direction is documented as authored, without implying a theme choice or visual approval from the user.",
     "keyCharacteristics": [
       "Solid cool neutrals and flat surfaces.",
       "Geist for interface text; Geist Mono for URLs and device codes.",

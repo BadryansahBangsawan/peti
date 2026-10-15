@@ -142,7 +142,7 @@ components:
 
 Peti is a quiet desktop workspace for selecting repositories and following transfers. Cool neutral surfaces, graphite actions and the original Slot symbol give the interface a precise, restrained character. Repository identity, current state and the next action stay easy to scan.
 
-This record is extracted from the built editable canvas, its named variables and the interface-system export, rather than from running application styles. Light is the provisional primary presentation; a dark mode is also built. The direction is documented as authored, without implying a theme choice or visual approval from the user.
+This record is extracted from the built editable canvas, its named variables and the interface-system export, rather than from running application styles. Light is the provisional primary presentation; all five destinations now also have dark specimens. The canvas contains 25 root frames: 22 app screens/variants and three reference boards. The direction is documented as authored, without implying a theme choice or visual approval from the user.
 
 **Key Characteristics:**
 
@@ -151,7 +151,7 @@ This record is extracted from the built editable canvas, its named variables and
 - Repository rows own progress, status and actions.
 - Text and restrained semantic color explain outcomes.
 
-Source of truth: [editable canvas](../untitled.pen), interface-system node `jzvbx`, and `GetVariables()` read on 15 October 2026. See [BRIEF.md](BRIEF.md) for the direction contract and reference provenance, [HANDOFF.md](HANDOFF.md) for the screen map and implementation boundary, and [QA.md](QA.md) for scoped verification. Frontmatter primitives are normative; the sidecar holds extension metadata and illustrative previews.
+Source of truth: [editable canvas](../untitled.pen), interface-system node `jzvbx`, and `GetVariables()` read on 15 October 2026. Continuation coverage follows the twelve added pages recorded in HANDOFF.md and BRIEF.md; base tokens remain unchanged. See [BRIEF.md](BRIEF.md) for the direction contract and reference provenance, [HANDOFF.md](HANDOFF.md) for the screen map and implementation boundary, and [QA.md](QA.md) for scoped verification. Frontmatter primitives are normative; the sidecar holds extension metadata and illustrative previews.
 
 ## Colors
 
@@ -197,19 +197,21 @@ Surfaces are flat. Tonal shifts distinguish sidebar, summary panel, selected nav
 
 ## Shapes
 
-Controls have gently curved corners (`rounded.control`); chips are tighter (`rounded.chip`) and summary/action panels are broader (`rounded.panel`). Preserve the observed exceptions: the quick-paste composer uses `rounded.paste`, state cards and the sidebar destination block use `rounded.state`, and progress tracks use `rounded.progress`. Keep the exact original Slot path geometry when sizing the brand mark.
+Controls have gently curved corners (`rounded.control`); chips are tighter (`rounded.chip`) and summary/action panels are broader (`rounded.panel`). Preserve the observed exceptions: the quick-paste composer uses `rounded.paste`, state cards and the sidebar destination block use `rounded.state`, and list progress tracks use `rounded.progress`. The transfer-detail page is an observed exception: its track is 5 px high with 3 px corners. This local measurement does not replace the list-track token. Keep the exact original Slot path geometry when sizing the brand mark.
 
 ## Components
 
 ### Buttons
 
-Primary and secondary controls share label type, compact padding and an icon/label gap (`spacing.icon`). Primary uses action graphite/inverse; secondary uses canvas/reading ink with a single-pixel boundary stroke. The keyboard-focus specimen has an outer 2 px reading-ink stroke. The disabled primary specimen has opacity 0.4. Four button specimens are reusable, with four primary/secondary instances placed in the authored screens. Hover and pressed colors are not separately authored; do not claim an unobserved treatment as a canvas token.
+Primary and secondary controls share label type, compact padding and an icon/label gap (`spacing.icon`). Primary uses action graphite/inverse; secondary uses canvas/reading ink with a single-pixel boundary stroke. The keyboard-focus specimen has an outer 2 px reading-ink stroke. The disabled primary specimen has opacity 0.4. Four button specimens are reusable and instantiated across the authored screens, including the continuation pages. Hover and pressed colors are not separately authored; do not claim an unobserved treatment as a canvas token.
 
 The system board calls for quiet transitions of 100–150 ms and reduced-motion support. These are implementation intent; animation and keyboard traversal have not been runtime-tested.
 
 ### Inputs / Fields
 
 The Discover search field is 44 px high, with control corners, a single-pixel boundary, 14 px horizontal padding, a 17 px search icon and 13 px placeholder copy. The quick-paste composer is a distinct bordered row with paste corners and 13 px vertical / 16 px horizontal padding. Validation separates valid and invalid repository entries and retains a clear recovery action.
+
+The filtered Discover page includes an open language menu layered above result rows. This dropdown is an authored overlay exception to the usual inline filter layout; close it before selecting a covered result. Its presence does not establish a new elevation token or runtime menu behavior.
 
 ### Navigation
 
@@ -225,7 +227,9 @@ Summary and action panels use panel corners and quiet surfaces, commonly with 24
 
 ### Repository progress and outcomes
 
-A repository row groups identity, branch, transfer details and local controls. Known-size tracks are 4 px high, with fill proportional to received / total bytes; unknown-size rows omit a guessed percentage and ETA. Pause, cancel, retry and resume states must follow real transfer state. Resume that cannot use HTTP Range explains that transfer starts again.
+A repository row groups identity, branch, transfer details and local controls. Known-size list tracks are 4 px high, with fill proportional to received / total bytes; unknown-size rows omit a guessed percentage and ETA. Pause, cancel, retry and resume states must follow real transfer state. Resume that cannot use HTTP Range explains that transfer starts again.
+
+The continuation adds full pages for transfer detail, completed and failed downloads, filtered search, first use, empty Library, guest Settings and a fork-created/download-queued result. Transfer detail uses the 5 px / 3 px track exception described above. A created fork with a queued transfer does not imply that its local folder is ready. Guest Settings selects the system theme; dark Settings selects dark.
 
 The 16 reusable interaction/outcome states cover: Downloads empty; Discover no results; loading; connection failure; missing local folder; GitHub limit; expired device code; GitHub disconnected; success feedback; download cancellation; fork success; fork plus download completion; restart on resume; Library empty; repository unavailable; and destination permission failure. The last six appear on the outcomes board. Library completion points to the actual folder; fork results identify the created owner/repository. Pending authorization does not imply a connected account.
 

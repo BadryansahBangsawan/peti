@@ -295,6 +295,8 @@ fn set_saved_language(
 struct GithubBody {
     connected: bool,
     login: String,
+    name: String,
+    avatar_url: String,
     user_code: String,
     interval: u64,
 }
@@ -303,6 +305,8 @@ fn github_body(view: github::LoginView) -> GithubBody {
     GithubBody {
         connected: view.connected,
         login: view.login,
+        name: view.name,
+        avatar_url: view.avatar_url,
         user_code: view.user_code,
         interval: view.interval,
     }
@@ -320,7 +324,7 @@ fn github_status(
     session: tauri::State<'_, github::Session<github::OsSecrets>>,
 ) -> Result<GithubBody, String> {
     session
-        .status()
+        .profile(github::fetch_login)
         .map(github_body)
         .map_err(|err| err.to_string())
 }
@@ -488,6 +492,11 @@ fn queue_cancel(store: tauri::State<'_, store::Store>, id: i64) -> Result<(), St
 }
 
 #[tauri::command]
+fn queue_dismiss(store: tauri::State<'_, store::Store>, id: i64) -> Result<(), String> {
+    queue::dismiss(&store, id)
+}
+
+#[tauri::command]
 fn queue_retry(
     store: tauri::State<'_, store::Store>,
     downloads: tauri::State<'_, Downloads>,
@@ -591,6 +600,8 @@ fn set_github_client_id(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             use tauri::Manager;
             let dir = app.path().app_data_dir()?;
@@ -625,6 +636,7 @@ pub fn run() {
             queue_paste,
             queue_pause,
             queue_cancel,
+            queue_dismiss,
             queue_retry,
             queue_resume,
             app_settings,

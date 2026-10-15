@@ -26,21 +26,84 @@ test("a connected account keeps only a real login and drops a code", () => {
       userCode: "ABCD-1234",
       interval: 5,
     }),
-    { connected: true, login: "octocat", userCode: "", interval: 0 },
+    { connected: true, login: "octocat", name: "", avatarUrl: "", userCode: "", interval: 0 },
   );
   assert.equal(CONNECTED, "Terhubung");
   assert.deepEqual(readGithub({ connected: true, login: "not a name", userCode: "", interval: 0 }), {
     connected: true,
     login: "",
+    name: "",
+    avatarUrl: "",
     userCode: "",
     interval: 0,
   });
+  assert.deepEqual(
+    readGithub({
+      connected: true,
+      login: "octocat",
+      name: "  Mona Lisa  ",
+      avatarUrl: "https://avatars.githubusercontent.com/u/1?v=4",
+      userCode: "",
+      interval: 0,
+    }),
+    {
+      connected: true,
+      login: "octocat",
+      name: "Mona Lisa",
+      avatarUrl: "https://avatars.githubusercontent.com/u/1?v=4",
+      userCode: "",
+      interval: 0,
+    },
+  );
+  assert.equal(
+    readGithub({
+      connected: true,
+      login: "octocat",
+      name: "a\nb",
+      avatarUrl: "https://evil.test/a.png",
+      userCode: "",
+      interval: 0,
+    })?.name,
+    "",
+  );
+  assert.equal(
+    readGithub({
+      connected: true,
+      login: "octocat",
+      name: "ok",
+      avatarUrl: "https://user:pw@avatars.githubusercontent.com/u/1",
+      userCode: "",
+      interval: 0,
+    })?.avatarUrl,
+    "",
+  );
 });
 
 test("a pending code keeps a bounded interval and drops a login", () => {
   assert.deepEqual(
     readGithub({ connected: false, login: "octocat", userCode: "ABCD-1234", interval: 15 }),
-    { connected: false, login: "", userCode: "ABCD-1234", interval: 15 },
+    { connected: false, login: "", name: "", avatarUrl: "", userCode: "ABCD-1234", interval: 15 },
+  );
+  assert.equal(
+    readGithub({
+      connected: false,
+      login: "",
+      name: "Mona Lisa",
+      avatarUrl: "https://avatars.githubusercontent.com/u/1?v=4",
+      userCode: "ABCD-1234",
+      interval: 15,
+    })?.name,
+    "",
+  );
+  assert.equal(
+    readGithub({
+      connected: false,
+      login: "",
+      avatarUrl: "https://avatars.githubusercontent.com/u/1?v=4",
+      userCode: "ABCD-1234",
+      interval: 15,
+    })?.avatarUrl,
+    "",
   );
   assert.equal(readGithub({ connected: false, login: "", userCode: "ABCD-1234", interval: 4 })?.interval, 5);
   assert.equal(
@@ -54,6 +117,8 @@ test("a pending code keeps a bounded interval and drops a login", () => {
   assert.deepEqual(readGithub({ connected: false, login: "octocat", userCode: "", interval: 9 }), {
     connected: false,
     login: "",
+    name: "",
+    avatarUrl: "",
     userCode: "",
     interval: 0,
   });

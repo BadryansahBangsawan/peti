@@ -1,9 +1,13 @@
+import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check } from "@tauri-apps/plugin-updater";
 import {
   applySearchResult,
   cardKey,
   descriptionOf,
+  EMPTY_DESCRIPTION,
   FAILED_MESSAGE,
   githubHref,
   LIMIT_MESSAGE,
@@ -12,7 +16,6 @@ import {
   readQueueDiscover,
   repoTitle,
   SEARCH_WAIT_MS,
-  selectionLabel,
   type DiscoverCard,
   type DiscoverNotice,
 } from "./discover.ts";
@@ -26,7 +29,6 @@ import {
   OWN_REPO,
   UNPREPARED,
   detailTakes,
-  deviceHint,
   forkResultNote,
   githubMessage,
   pollDelayMs,
@@ -49,8 +51,77 @@ import {
   transferLine,
   type QueueRow,
   type SpeedSample,
+  type TransferPhrases,
 } from "./queue.ts";
 import { applyTheme, parseSavedTheme, type Theme } from "./theme.ts";
+import {
+  catalogs,
+  fill,
+  htmlLang,
+  localeOptions,
+  parseLocale,
+  type LocaleId,
+  type Messages,
+} from "./i18n.ts";
+
+let locale: LocaleId = "id";
+let copy: Messages = catalogs.id;
+let appVersion = "";
+let languageTouched = false;
+let githubNoteRaw = "";
+let historyCache: HistoryRow[] = [];
+let addReviewQueued = 0;
+let addReviewLines: string[] = [];
+
+function displayText(text: string): string {
+  if (text === UNPREPARED) return copy.unprepared;
+  if (text === DENIED) return copy.denied;
+  if (text === EXPIRED) return copy.expired;
+  if (text === NOT_RUN) return copy.notRun;
+  if (text === CONNECTED) return copy.connected;
+  if (text === OWN_REPO) return copy.ownRepo;
+  if (text === FORK_FAILED) return copy.forkFailed;
+  if (text === EMPTY_DESCRIPTION) return copy.noDescription;
+  if (text === LIMIT_MESSAGE) return copy.limitMessage;
+  if (text === FAILED_MESSAGE) return copy.failedSearch;
+  if (text === "Repositori tidak tersedia") return copy.unavailable;
+  if (text === "Masuk antrean unduhan.") return copy.queuedNote;
+  if (text === "Repo ini sudah ada di antrean.") return copy.alreadyQueued;
+  if (text === "Tidak bisa masuk antrean.") return copy.queueFailed;
+  const made = " dibuat";
+  if (text.endsWith(made)) return fill(copy.forkMadeName, { name: text.slice(0, -made.length) });
+  return text;
+}
+
+function statusPhrases(): Record<string, string> {
+  return {
+    berjalan: copy.statusRunning,
+    dijeda: copy.statusPaused,
+    menunggu: copy.statusWaiting,
+    gagal: copy.statusFailed,
+    selesai: copy.statusDone,
+    dibatalkan: copy.statusCancelled,
+  };
+}
+
+function queuePhrases(): TransferPhrases {
+  return {
+    waiting: copy.waitingSlot,
+    downloaded: copy.downloaded,
+    remaining: copy.remaining,
+    totalUnknown: copy.totalUnknown,
+    saved: copy.progressSaved,
+  };
+}
+
+function folderError(err: unknown): string {
+  return typeof err === "string" && err.length > 0 ? err : copy.folderUnusable;
+}
+
+function shownDescription(card: DiscoverCard): string {
+  const text = descriptionOf(card);
+  return text === EMPTY_DESCRIPTION ? copy.noDescription : text;
+}
 
 function svg(inner: string, size = 18): string {
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
@@ -96,7 +167,6 @@ const arrowLeftIcon = `<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>`;
 const folderIcon = `<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>`;
 const clipboardPasteIcon = `<path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1Z"/><path d="m17 10 4 4-4 4"/>`;
 const githubMarkIcon = `<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>`;
-const settingsIcon = `<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>`;
 const infoIcon = `<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>`;
 const copyIcon = `<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>`;
 const loaderIcon = `<path d="M21 12a9 9 0 1 1-6.219-8.56"/>`;
@@ -227,11 +297,20 @@ function filterSelect(
     select.append(item);
   }
   select.value = "";
+  const shown = document.createElement("span");
+  shown.className = "filter-value";
+  shown.setAttribute("aria-hidden", "true");
+  shown.textContent = empty;
   const chevron = document.createElement("span");
   chevron.className = "filter-chevron";
   chevron.innerHTML = svg(chevronDownIcon, 16);
-  wrap.append(select, chevron);
+  wrap.append(shown, select, chevron);
   return wrap;
+}
+
+function paintFilterValue(select: HTMLSelectElement): void {
+  const shown = select.parentElement?.querySelector(".filter-value");
+  if (shown) shown.textContent = select.options[select.selectedIndex]?.textContent ?? "";
 }
 
 const filterRow = document.createElement("div");
@@ -324,16 +403,13 @@ resultFresh.append(document.createRange().createContextualFragment(svg(refreshIc
 const resultFreshText = document.createElement("span");
 resultFreshText.textContent = "Baru diperbarui";
 resultFresh.append(resultFreshText);
-resultHead.append(resultTitle, resultCount, resultCriteria, resultFresh);
-
-const activeFilters = document.createElement("div");
-activeFilters.className = "active-filters";
-activeFilters.hidden = true;
 const resetFilters = document.createElement("button");
 resetFilters.type = "button";
 resetFilters.className = "reset-filters";
+resetFilters.hidden = true;
 resetFilters.textContent = "Reset filter";
-activeFilters.append(resetFilters);
+resultHead.append(resultTitle, resultCount, resultCriteria, resultFresh, resetFilters);
+
 const filterNote = document.createElement("p");
 filterNote.className = "filter-note";
 filterNote.hidden = true;
@@ -355,8 +431,9 @@ function paintDiscoverFilters(): void {
   const filtered = discoverFiltered();
   const hasResults = discoverCards.length > 0;
   searchClear.hidden = searchInput.value.length === 0;
+  paintFilterValue(languageSelect);
+  paintFilterValue(topicSelect);
   resetFilters.hidden = !filtered || !hasResults;
-  activeFilters.hidden = resetFilters.hidden;
   filterNote.hidden = !filtered || !hasResults || currentId() !== "discover" || detailCard !== null;
 }
 
@@ -374,19 +451,214 @@ function resetDiscoverFilters(): void {
 
 resetFilters.addEventListener("click", resetDiscoverFilters);
 
+function pageMessages(id: PageId): { section: string; label: string; title: string; empty: string; action: string } {
+  if (id === "home") return { section: copy.sectionWorkspace, label: copy.navHome, title: copy.homeTitle, empty: copy.homeEmpty, action: copy.homeAction };
+  if (id === "downloads") return { section: copy.sectionWorkspace, label: copy.navDownloads, title: copy.downloadsTitle, empty: copy.downloadsEmpty, action: copy.downloadsAction };
+  if (id === "discover") return { section: copy.sectionExplore, label: copy.navDiscover, title: copy.discoverTitle, empty: copy.discoverEmpty, action: copy.discoverAction };
+  if (id === "library") return { section: copy.sectionLocal, label: copy.navLibrary, title: copy.libraryTitle, empty: copy.libraryEmptyPage, action: copy.libraryAction };
+  return { section: copy.sectionWorkspace, label: copy.navSettings, title: copy.settingsTitle, empty: copy.settingsEmpty, action: copy.settingsAction };
+}
+
+function paintPageChrome(): void {
+  const id = currentId();
+  const page = pageMessages(id);
+  crumbSection.textContent = page.section;
+  crumbPage.textContent = page.label;
+  empty.textContent = page.empty;
+  action.textContent = page.action;
+  if (id === "home") title.textContent = homeIsFirst() ? copy.homeWelcome : copy.homeTitle;
+  else if (id === "downloads" && addOpen) title.textContent = copy.addRepo;
+  else title.textContent = page.title;
+  nav.setAttribute("aria-label", copy.navAria);
+  railButton.setAttribute("aria-label", copy.sidebarAria);
+  for (const [pageId, button] of buttons) {
+    const label = button.querySelector(".nav-label");
+    if (label) label.textContent = pageMessages(pageId).label;
+  }
+}
+
+function setSpan(root: ParentNode, text: string): void {
+  const label = root.querySelector("span");
+  if (label) label.textContent = text;
+}
+
+function paintChrome(): void {
+  destinationLabel.textContent = copy.folderDownloads;
+  searchInput.placeholder = copy.searchPlaceholder;
+  searchInput.setAttribute("aria-label", copy.searchAria);
+  searchClear.setAttribute("aria-label", copy.clearSearch);
+  languageSelect.setAttribute("aria-label", copy.languageAria);
+  topicSelect.setAttribute("aria-label", copy.topicAria);
+  if (languageSelect.options[0]) languageSelect.options[0].textContent = copy.allLanguages;
+  if (topicSelect.options[0]) topicSelect.options[0].textContent = copy.allTopics;
+  paintFilterValue(languageSelect);
+  paintFilterValue(topicSelect);
+  paintFilterValue(uiLanguage);
+  const periodIds = ["day", "week", "month"] as const;
+  const periods = [copy.periodDay, copy.periodWeek, copy.periodMonth];
+  for (let i = 0; i < periodIds.length; i += 1) {
+    const option = periodSelect.options[i];
+    if (option) option.textContent = periods[i];
+    const button = periodButtons.get(periodIds[i]);
+    if (button) button.textContent = periods[i];
+  }
+  resultCriteria.textContent = copy.byStars;
+  resultFreshText.textContent = copy.justUpdated;
+  resetFilters.textContent = copy.resetFilters;
+  filterNoteText.textContent = copy.filterNote;
+  discoverEmpty.eyebrowText.textContent = copy.emptyDiscoverEyebrow;
+  discoverEmpty.title.textContent = copy.emptyDiscoverHeading;
+  discoverEmpty.description.textContent = copy.emptyDiscoverHint;
+  setSpan(discoverEmpty.button, copy.resetFilters);
+  setSpan(discoverStatus.button, copy.tryAgain);
+  addSelectedLabel.textContent = copy.download;
+  const tabCopy: Record<QueueTab, string> = {
+    semua: copy.tabAll,
+    berjalan: copy.tabRunning,
+    menunggu: copy.tabWaiting,
+    selesai: copy.tabDone,
+    gagal: copy.tabFailed,
+  };
+  for (const [id, button] of tabButtons) {
+    const label = button.querySelector("span");
+    if (label) label.textContent = tabCopy[id];
+  }
+  doneLinkLabel.textContent = copy.seeAllLibrary;
+  doneNote.textContent = copy.doneNote;
+  failNote.textContent = copy.failNote;
+  addLinksTitle.textContent = copy.linksTitle;
+  addLinksHint.textContent = copy.linksHint;
+  addLinks.setAttribute("aria-label", copy.linksAria);
+  addChoiceTitle.textContent = copy.whatNext;
+  addSaveLabel.textContent = copy.saveTo;
+  addFolderChange.textContent = copy.changeShort;
+  addReviewTitle.textContent = copy.readyQueue;
+  addBackLabel.textContent = copy.backDownloads;
+  const reviewCopy = [copy.reviewSnapshot, copy.reviewFolder, copy.reviewStarts];
+  const reviewNodes = addReviewNotes.querySelectorAll("p");
+  for (let i = 0; i < reviewCopy.length; i += 1) {
+    const node = reviewNodes[i];
+    if (node) node.textContent = reviewCopy[i];
+  }
+  const choiceCopy: Record<TakeAction, { label: string; hint: string }> = {
+    download: { label: copy.onlyDownload, hint: copy.addHintDownload },
+    fork: { label: copy.onlyFork, hint: copy.addHintFork },
+    "fork-download": { label: copy.forkThenDownload, hint: copy.addHintForkDownload },
+  };
+  for (const [id, button] of addChoiceButtons) {
+    const label = button.querySelector(".choice-label");
+    const hint = button.querySelector(".choice-hint");
+    if (label) label.textContent = choiceCopy[id].label;
+    if (hint) hint.textContent = choiceCopy[id].hint;
+  }
+  pasteInput.placeholder = copy.pastePlaceholder;
+  pasteInput.setAttribute("aria-label", copy.linkAria);
+  emptyEyebrowText.textContent = copy.emptyEyebrow;
+  emptyTitle.textContent = copy.emptyTitle;
+  emptyDesc.textContent = copy.emptyDesc;
+  setSpan(emptyAdd, copy.addRepo);
+  setSpan(pauseAll, copy.pauseAll);
+  composerTitle.textContent = copy.composerTitle;
+  composerHint.textContent = copy.composerHint;
+  composerInput.placeholder = copy.repoPlaceholder;
+  composerInput.setAttribute("aria-label", copy.linkAria);
+  composerChange.textContent = copy.changeShort;
+  downloadRepoLabel.textContent = copy.downloadRepo;
+  homeOpenLabel.textContent = copy.seeDownloads;
+  firstTitle.textContent = copy.whatRepo;
+  firstInput.placeholder = copy.repoPlaceholder;
+  firstInput.setAttribute("aria-label", copy.linkAria);
+  changeFolder.textContent = copy.changeFolder;
+  pasteClipboardLabel.textContent = copy.pasteClipboard;
+  recentTitle.textContent = copy.recentTitle;
+  openLibraryLabel.textContent = copy.openLibrary;
+  suggestText.textContent = copy.noPick;
+  suggestLinkLabel.textContent = copy.exploreDiscover;
+  libraryEmptyTitle.textContent = copy.libraryEmptyTitle;
+  libraryEmptyText.textContent = copy.libraryEmptyText;
+  setSpan(libraryStart, copy.startDownload);
+  libraryDiscoverLabel.textContent = copy.exploreDiscover;
+  libraryNoteText.textContent = copy.libraryNote;
+  const folderHead = folderSection.querySelector("h2");
+  if (folderHead) folderHead.textContent = copy.folderTitle;
+  const themeHead = themeSection.querySelector("h2");
+  if (themeHead) themeHead.textContent = copy.appearance;
+  legend.textContent = copy.themeLegend;
+  const themeCopy = [copy.themeSystem, copy.themeLight, copy.themeDark];
+  const themeNames = themeBlock.querySelectorAll<HTMLElement>(".theme-option span:not(.theme-glyph)");
+  for (let i = 0; i < themeCopy.length; i += 1) {
+    const node = themeNames[i];
+    if (node) node.textContent = themeCopy[i];
+  }
+  uiLanguage.setAttribute("aria-label", copy.language);
+  const githubHead = githubSection.querySelector("h2");
+  if (githubHead) githubHead.textContent = copy.githubTitle;
+  settingsLocal.textContent = copy.tagline;
+  settingsVersion.textContent = appVersion.length > 0 ? `Peti ${appVersion}` : copy.version;
+  deviceBackLabel.textContent = copy.deviceBack;
+  deviceTitle.textContent = copy.deviceTitle;
+  deviceStepTitle.textContent = copy.deviceStep;
+  deviceStepText.textContent = copy.deviceBody;
+  deviceCopyLabel.textContent = copy.copyCode;
+  deviceOpenLabel.textContent = copy.openGithub;
+  deviceCancelLabel.textContent = copy.deviceCancel;
+  deviceWaitLabel.textContent = copy.waitingBrowser;
+  deviceAsideTitle.textContent = copy.afterConnect;
+  const asideCopy = [copy.asideFork, copy.asideDownload, copy.asideChoose];
+  const asideRows = deviceAside.querySelectorAll<HTMLElement>(".device-aside-row span");
+  for (let i = 0; i < asideCopy.length; i += 1) {
+    const node = asideRows[i];
+    if (node) node.textContent = asideCopy[i];
+  }
+  deviceAsideNote.textContent = copy.asideNote;
+  settingsFolderLabel.textContent = copy.changeFolder;
+  paintAddButton();
+  paintGithubButton(githubView?.connected === true);
+}
+
+function refreshViews(): void {
+  paintChrome();
+  paintPageChrome();
+  paintAccount();
+  if (currentId() === "settings") {
+    renderGithub(githubView, githubNoteRaw);
+    paintDeviceFlow();
+  }
+  if (currentId() === "discover") {
+    renderSelection();
+    renderDetail();
+    renderDiscover(discoverCards, discoverNotice);
+  }
+  if (currentId() === "downloads") renderQueue(queueRows);
+  if (currentId() === "home") {
+    renderHomeStrip(queueRows);
+    renderRecent(historyCache);
+  }
+  if (currentId() === "library") renderHistory("library", historyCache);
+  if (addReviewLines.length > 0) paintAddReview(addReviewQueued, addReviewLines);
+}
+
+function applyLocale(next: LocaleId): void {
+  locale = next;
+  copy = catalogs[next];
+  document.documentElement.lang = htmlLang(next);
+  uiLanguage.value = next;
+  refreshViews();
+}
+
 function paintPeriod(): void {
   const current = periodQuery(periodSelect.value);
   const filtered = discoverFiltered();
   resultTitle.textContent = filtered
-    ? "Hasil pencarian"
+    ? copy.searchResults
     : current === "day"
-      ? "Populer hari ini"
+      ? copy.popularDay
       : current === "month"
-        ? "Populer bulan ini"
-        : "Populer minggu ini";
+        ? copy.popularMonth
+        : copy.popularWeek;
   resultCount.hidden = !filtered;
   if (filtered) {
-    resultCount.textContent = `${discoverCards.length} repo`;
+    resultCount.textContent = fill(copy.repoCount, { count: discoverCards.length });
   }
   resultCriteria.hidden = filtered;
   resultFresh.hidden = filtered;
@@ -454,20 +726,18 @@ discoverStatus.button.addEventListener("click", () => {
 const selectionBar = document.createElement("div");
 selectionBar.className = "selection bulk";
 selectionBar.hidden = true;
-const bulkIcon = document.createElement("span");
-bulkIcon.className = "bulk-icon";
-bulkIcon.innerHTML = svg(circleCheckIcon, 18);
-const selectionCount = document.createElement("span");
-selectionCount.className = "bulk-count";
-const clearSelected = document.createElement("button");
-clearSelected.type = "button";
-clearSelected.className = "bulk-clear";
-clearSelected.textContent = "Batalkan pilihan";
 const addSelected = document.createElement("button");
 addSelected.type = "button";
 addSelected.className = "bulk-add";
-addSelected.textContent = "Tambah ke antrean";
-selectionBar.append(bulkIcon, selectionCount, clearSelected, addSelected);
+const bulkIcon = document.createElement("span");
+bulkIcon.className = "bulk-icon";
+bulkIcon.innerHTML = svg(downloadIcon, 16);
+const addSelectedLabel = document.createElement("span");
+addSelectedLabel.textContent = "Unduh";
+const selectionCount = document.createElement("span");
+selectionCount.className = "bulk-count";
+addSelected.append(bulkIcon, addSelectedLabel, selectionCount);
+selectionBar.append(addSelected);
 
 const detail = document.createElement("section");
 detail.className = "detail";
@@ -480,12 +750,10 @@ discoverList.hidden = true;
 discoverFilters.append(
   discoverSearch,
   filterRow,
-  activeFilters,
   resultHead,
   discoverStatus.card,
   discoverList,
   discoverEmpty.card,
-  selectionBar,
   filterNote,
   notice,
 );
@@ -568,7 +836,7 @@ addRepo.addEventListener("click", () => {
 function paintHeadingAction(retryAll: boolean): void {
   const text = addRepo.querySelector("span");
   if (text) {
-    text.textContent = retryAll ? "Ulang semua gagal" : "Tambah repo";
+    text.textContent = retryAll ? copy.retryAllFailed : copy.addRepo;
   }
   const icon = addRepo.querySelector("svg");
   if (icon) {
@@ -693,8 +961,9 @@ doneTitle.className = "done-title";
 const doneLink = document.createElement("button");
 doneLink.type = "button";
 doneLink.className = "done-link";
-doneLink.textContent = "Lihat semuanya di Library";
-doneLink.append(document.createRange().createContextualFragment(svg(arrowRightIcon, 15)));
+const doneLinkLabel = document.createElement("span");
+doneLinkLabel.textContent = "Lihat semuanya di Library";
+doneLink.append(doneLinkLabel, document.createRange().createContextualFragment(svg(arrowRightIcon, 15)));
 doneLink.addEventListener("click", () => {
   show("library");
 });
@@ -1006,94 +1275,15 @@ pasteClipboard.type = "button";
 pasteClipboard.className = "ink-btn";
 pasteClipboard.append(document.createRange().createContextualFragment(svg(clipboardPasteIcon, 16)));
 const pasteClipboardLabel = document.createElement("span");
-pasteClipboardLabel.textContent = "Tempel dari clipboard";
+pasteClipboardLabel.textContent = "Tempel";
 pasteClipboard.append(pasteClipboardLabel);
 pasteClipboard.addEventListener("click", () => {
   void readClipboard();
 });
 firstActions.append(firstFolderIcon, firstPath, changeFolder, firstSpacer, pasteClipboard);
-const firstHint = document.createElement("p");
-firstHint.className = "composer-hint";
-firstHint.textContent =
-  "Bisa satu atau banyak tautan sekaligus. Kamu akan melihat validasi sebelum mulai.";
-firstComposer.append(firstTitle, firstForm, firstActions, firstHint);
+firstComposer.append(firstTitle, firstForm, firstActions);
 
-const firstNext = document.createElement("div");
-firstNext.className = "first-next";
-const firstSteps = document.createElement("div");
-firstSteps.className = "first-steps";
-const stepsTitle = document.createElement("h2");
-stepsTitle.textContent = "Dari tautan ke folder lokal.";
-const stepList = document.createElement("div");
-stepList.className = "first-step-list";
-for (const step of [
-  { icon: linkIcon, text: "Tempel tautan repo publik" },
-  { icon: downloadIcon, text: "Pilih folder dan mulai unduh" },
-  { icon: folderOpenIcon, text: "Buka hasilnya dari Library" },
-]) {
-  const row = document.createElement("div");
-  row.className = "first-step";
-  const icon = document.createElement("span");
-  icon.innerHTML = svg(step.icon, 16);
-  const label = document.createElement("span");
-  label.textContent = step.text;
-  row.append(icon, label);
-  stepList.append(row);
-}
-firstSteps.append(stepsTitle, stepList);
-const discoverCard = document.createElement("aside");
-discoverCard.className = "discover-card";
-const compass = document.createElement("span");
-compass.className = "discover-card-icon";
-compass.innerHTML = svg(
-  `<path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/><circle cx="12" cy="12" r="10"/>`,
-  24,
-);
-const discoverCardTitle = document.createElement("h2");
-discoverCardTitle.textContent = "Belum punya repo pilihan?";
-const discoverCardText = document.createElement("p");
-discoverCardText.textContent = "Cari proyek lewat bahasa, topik, dan repo populer di Discover.";
-const discoverCardButton = document.createElement("button");
-discoverCardButton.type = "button";
-discoverCardButton.className = "line-btn";
-const discoverCardLabel = document.createElement("span");
-discoverCardLabel.textContent = "Jelajahi Discover";
-discoverCardButton.append(
-  discoverCardLabel,
-  document.createRange().createContextualFragment(svg(arrowRightIcon, 16)),
-);
-discoverCardButton.addEventListener("click", () => show("discover"));
-discoverCard.append(compass, discoverCardTitle, discoverCardText, discoverCardButton);
-firstNext.append(firstSteps, discoverCard);
-
-const firstRule = document.createElement("div");
-firstRule.className = "first-rule";
-const githubRow = document.createElement("div");
-githubRow.className = "github-note";
-const githubMark = document.createElement("span");
-githubMark.className = "github-note-icon";
-githubMark.innerHTML = svg(githubMarkIcon, 21);
-const githubCopy = document.createElement("div");
-githubCopy.className = "github-note-copy";
-const githubLabel = document.createElement("p");
-githubLabel.className = "github-note-label";
-githubLabel.textContent = "Masuk GitHub hanya jika dibutuhkan.";
-const githubDesc = document.createElement("p");
-githubDesc.className = "github-note-desc";
-githubDesc.textContent = "Unduh repo publik tanpa akun. Hubungkan akun nanti untuk membuat fork.";
-githubCopy.append(githubLabel, githubDesc);
-const githubSettings = document.createElement("button");
-githubSettings.type = "button";
-githubSettings.className = "line-btn";
-const githubSettingsLabel = document.createElement("span");
-githubSettingsLabel.textContent = "Buka Settings";
-githubSettings.append(
-  document.createRange().createContextualFragment(svg(settingsIcon, 16)),
-  githubSettingsLabel,
-);
-githubSettings.addEventListener("click", () => show("settings"));
-githubRow.append(githubMark, githubCopy, githubSettings);
-firstRun.append(firstComposer, firstNext, firstRule, githubRow);
+firstRun.append(firstComposer);
 
 home.append(composer, homeStrip, recentHead, recentList, suggest, firstRun);
 
@@ -1120,7 +1310,7 @@ function paintDownloadFolder(path: string): void {
   const folderKnown = path.trim().length > 0;
   composerPath.hidden = !folderKnown;
   composerFolderIcon.hidden = !folderKnown;
-  changeFolder.textContent = "Ganti folder";
+  changeFolder.textContent = copy.changeFolder;
   addFolderPath.textContent = path;
   destinationPath.textContent = path;
   settingsFolderPath.textContent = path;
@@ -1213,6 +1403,7 @@ let githubView: GithubView | null = null;
 let githubTimer: ReturnType<typeof setTimeout> | undefined;
 let githubTicket = 0;
 let deviceFlowOpen = false;
+let githubPollHold = false;
 
 function clearGithubTimer(): void {
   if (githubTimer !== undefined) {
@@ -1230,7 +1421,7 @@ function paintGithubButton(connected: boolean): void {
     githubButton.append(document.createRange().createContextualFragment(svg(arrowUpRightIcon, 16)));
   }
   const label = document.createElement("span");
-  label.textContent = connected ? "Keluar" : "Hubungkan GitHub";
+  label.textContent = connected ? copy.logout : copy.connect;
   githubButton.append(label);
 }
 
@@ -1246,23 +1437,25 @@ function renderGithub(view: GithubView | null, note: string): void {
   const connected = view?.connected === true;
   if (connected) {
     deviceFlowOpen = false;
+    githubPollHold = false;
   }
   githubBlock.classList.toggle("is-connected", connected);
-  githubAccount.textContent = connected && view?.login ? view.login : "Belum terhubung";
-  githubState.textContent = connected ? CONNECTED : "Unduh publik tetap bisa. Masuk untuk membuat fork.";
+  const profileName = connected && view?.name ? view.name : "";
+  githubAccount.textContent = connected && view?.login ? profileName || view.login : copy.notConnected;
+  githubState.textContent = connected ? copy.connected : copy.publicStill;
   githubCode.textContent = !connected && view ? view.userCode : "";
-  githubHint.textContent = !connected && view?.userCode ? deviceHint() : "";
-  githubNote.textContent = note;
+  githubHint.textContent = !connected && view?.userCode ? fill(copy.deviceHint, { url: DEVICE_PAGE }) : "";
+  githubNoteRaw = note;
+  githubNote.textContent = displayText(note);
   githubButton.hidden = !view && note === NOT_RUN;
   paintGithubButton(connected);
-  paintClientRow();
   armGithubPoll(!connected && view?.userCode ? view : null);
   paintDeviceFlow();
 }
 
 function armGithubPoll(view: GithubView | null): void {
   clearGithubTimer();
-  if (currentId() !== "settings" || !view || view.connected || !view.userCode) {
+  if (githubPollHold || currentId() !== "settings" || !view || view.connected || !view.userCode) {
     return;
   }
   const ticket = githubTicket;
@@ -1295,7 +1488,7 @@ function applyGithubError(err: unknown, keepCode: boolean): void {
   const stop = message === DENIED || message === EXPIRED || message === UNPREPARED;
   if (stop || !keepCode || !githubView?.userCode) {
     if (stop) {
-      githubView = { connected: false, login: "", userCode: "", interval: 0 };
+      githubView = { connected: false, login: "", name: "", avatarUrl: "", userCode: "", interval: 0 };
       renderGithub(githubView, message);
       return;
     }
@@ -1398,11 +1591,6 @@ const pageHead = document.createElement("div");
 pageHead.className = "page-head";
 pageHead.append(pageIntro, addRepo);
 
-const clientField = document.createElement("input");
-clientField.type = "text";
-clientField.autocomplete = "off";
-clientField.spellcheck = false;
-clientField.setAttribute("aria-label", "Client id GitHub");
 const settingsNote = document.createElement("p");
 settingsNote.className = "settings-note";
 
@@ -1444,20 +1632,35 @@ settingsFolderRow.append(settingsFolderIcon, settingsFolderPath, settingsFolderB
 folderSection.append(settingsFolderRow);
 
 const themeSection = settingsBlock("Tampilan");
-themeSection.append(themeBlock);
+const uiLanguage = document.createElement("select");
+const languageField = document.createElement("label");
+languageField.className = "filter-field language-field";
+uiLanguage.setAttribute("aria-label", copy.language);
+for (const option of localeOptions) {
+  const item = document.createElement("option");
+  item.value = option.id;
+  item.textContent = option.label;
+  uiLanguage.append(item);
+}
+uiLanguage.value = locale;
+const languageShown = document.createElement("span");
+languageShown.className = "filter-value";
+languageShown.setAttribute("aria-hidden", "true");
+languageShown.textContent = uiLanguage.options[uiLanguage.selectedIndex]?.textContent ?? "";
+uiLanguage.addEventListener("change", () => {
+  const next = parseLocale(uiLanguage.value);
+  languageTouched = true;
+  applyLocale(next);
+  void invoke("set_saved_language", { language: next }).catch(() => undefined);
+});
+const languageChevron = document.createElement("span");
+languageChevron.className = "filter-chevron";
+languageChevron.innerHTML = svg(chevronDownIcon, 16);
+languageField.append(languageShown, uiLanguage, languageChevron);
+themeSection.append(languageField, themeBlock);
 
 const githubSection = settingsBlock("GitHub");
 githubSection.append(githubBlock);
-
-const clientRow = document.createElement("section");
-clientRow.className = "settings-block";
-clientRow.hidden = true;
-const clientHead = document.createElement("div");
-clientHead.className = "settings-head";
-const clientTitle = document.createElement("h2");
-clientTitle.textContent = "Client id GitHub";
-clientHead.append(clientTitle);
-clientRow.append(clientHead, clientField);
 
 const settingsFoot = document.createElement("footer");
 settingsFoot.className = "settings-foot";
@@ -1520,7 +1723,13 @@ deviceOpen.append(document.createRange().createContextualFragment(svg(arrowUpRig
 const deviceOpenLabel = document.createElement("span");
 deviceOpenLabel.textContent = "Buka GitHub";
 deviceOpen.append(deviceOpenLabel);
-deviceActions.append(deviceOpen);
+const deviceCancel = document.createElement("button");
+deviceCancel.type = "button";
+deviceCancel.className = "line-btn";
+const deviceCancelLabel = document.createElement("span");
+deviceCancelLabel.textContent = copy.deviceCancel;
+deviceCancel.append(deviceCancelLabel);
+deviceActions.append(deviceOpen, deviceCancel);
 const deviceWait = document.createElement("p");
 deviceWait.className = "device-wait";
 deviceWait.hidden = true;
@@ -1570,6 +1779,13 @@ deviceBack.addEventListener("click", () => {
   deviceFlowOpen = false;
   paintDeviceFlow();
 });
+deviceCancel.addEventListener("click", () => {
+  deviceFlowOpen = false;
+  githubPollHold = true;
+  githubTicket += 1;
+  clearGithubTimer();
+  paintDeviceFlow();
+});
 deviceCopy.addEventListener("click", () => {
   const code = githubView?.connected === true ? "" : (githubView?.userCode ?? "");
   const clipboard = navigator.clipboard;
@@ -1585,22 +1801,14 @@ function paintDeviceFlow(): void {
   deviceFlow.hidden = !open;
   settingsPage.classList.toggle("is-device", open);
   deviceCode.textContent = open ? code : "";
-  deviceHintLine.textContent = open ? deviceHint() : "";
+  deviceHintLine.textContent = open ? fill(copy.deviceHint, { url: DEVICE_PAGE }) : "";
   deviceWait.hidden = !open;
   if (currentId() === "settings") {
     pageHead.hidden = open;
   }
 }
 
-settingsPage.append(deviceFlow, folderSection, themeSection, githubSection, clientRow, settingsNote, settingsFoot);
-clientField.addEventListener("change", saveClientId);
-
-function paintClientRow(): void {
-  clientRow.hidden =
-    clientField.value.trim().length === 0 &&
-    githubNote.textContent !== UNPREPARED &&
-    settingsNote.textContent !== UNPREPARED;
-}
+settingsPage.append(deviceFlow, folderSection, themeSection, githubSection, settingsNote, settingsFoot);
 
 content.append(
   pageHead,
@@ -1615,7 +1823,7 @@ content.append(
   historyList,
   settingsPage,
 );
-surface.append(toolbar, content);
+surface.append(toolbar, content, selectionBar);
 shell.append(nav, surface);
 root.append(shell);
 
@@ -1652,8 +1860,12 @@ function clearDiscoverTimer(): void {
 }
 
 function renderSelection(): void {
-  selectionCount.textContent = selectionLabel(selected.size);
-  selectionBar.hidden = currentId() !== "discover" || selected.size === 0;
+  const count = selected.size;
+  selectionCount.textContent = String(count);
+  addSelected.setAttribute("aria-label", `${copy.download}, ${fill(copy.selected, { count })}`);
+  const visible = currentId() === "discover" && count > 0 && detailCard === null;
+  selectionBar.hidden = !visible;
+  surface.classList.toggle("has-selection", visible);
 }
 
 function detailRule(): HTMLDivElement {
@@ -1743,7 +1955,7 @@ function renderForkResult(
   back.className = "back";
   back.append(document.createRange().createContextualFragment(svg(arrowLeftIcon, 15)));
   const backLabel = document.createElement("span");
-  backLabel.textContent = "Kembali ke detail repo";
+  backLabel.textContent = copy.backDetail;
   back.append(backLabel);
   back.addEventListener("click", () => {
     forkResult = null;
@@ -1755,11 +1967,11 @@ function renderForkResult(
     const intro = document.createElement("div");
     intro.className = "detail-intro";
     const heading = document.createElement("h2");
-    heading.textContent = view.queued ? "Fork berhasil. Unduhan siap dimulai." : "Fork berhasil.";
+    heading.textContent = view.queued ? copy.forkOkDownload : copy.forkOk;
     const desc = document.createElement("p");
     desc.className = "desc";
-    const actionLabel = result.action === "fork" ? "Hanya fork" : "Fork, lalu unduh";
-    desc.textContent = `Hasil tindakan ${actionLabel} untuk ${repoTitle(card)}.`;
+    const actionLabel = result.action === "fork" ? copy.onlyFork : copy.forkThenDownload;
+    desc.textContent = fill(copy.forkActionResult, { action: actionLabel, repo: repoTitle(card) });
     intro.append(heading, desc);
     detail.append(intro);
   }
@@ -1770,12 +1982,12 @@ function renderForkResult(
   bannerCopy.className = "fork-banner-copy";
   const bannerTitle = document.createElement("p");
   bannerTitle.className = "fork-banner-title";
-  bannerTitle.textContent = `${view.forked} berhasil dibuat`;
+  bannerTitle.textContent = fill(copy.forkCreated, { name: view.forked });
   bannerCopy.append(bannerTitle);
   if (view.queued) {
     const bannerText = document.createElement("p");
     bannerText.className = "fork-banner-text";
-    bannerText.textContent = "Unduhan memakai fork milikmu. Repo asal tidak ikut diunduh.";
+    bannerText.textContent = copy.forkBanner;
     bannerCopy.append(bannerText);
   }
   banner.append(bannerCopy);
@@ -1784,16 +1996,16 @@ function renderForkResult(
   const facts = document.createElement("div");
   facts.className = "fork-facts";
   const factsTitle = document.createElement("h3");
-  factsTitle.textContent = "Fork yang dibuat";
+  factsTitle.textContent = copy.forkMade;
   const rows = document.createElement("div");
   rows.className = "fork-rows";
   const place = forkPlace(view.forked);
   const info: [string, string][] = [
-    ["Repositori asal", repoTitle(card)],
-    ["Fork milikmu", view.forked],
+    [copy.origin, repoTitle(card)],
+    [copy.yourFork, view.forked],
   ];
   if (place.ref.length > 0) {
-    info.push(["Branch", place.ref]);
+    info.push([copy.branch, place.ref]);
   }
   for (const [label, value] of info) {
     const row = document.createElement("div");
@@ -1816,7 +2028,7 @@ function renderForkResult(
     button.className = "ink-btn";
     button.append(document.createRange().createContextualFragment(svg(arrowRightIcon, 16)));
     const label = document.createElement("span");
-    label.textContent = "Lihat Downloads";
+    label.textContent = copy.seeDownloads;
     button.append(label);
     button.addEventListener("click", () => {
       show("downloads");
@@ -1833,7 +2045,7 @@ function renderForkResult(
     open.target = "_blank";
     open.append(document.createRange().createContextualFragment(svg(arrowUpRightIcon, 16)));
     const openLabel = document.createElement("span");
-    openLabel.textContent = "Buka fork di GitHub";
+    openLabel.textContent = copy.openFork;
     open.append(openLabel);
     actions.append(open);
     facts.append(actions);
@@ -1852,7 +2064,7 @@ function renderForkResult(
     if (place.waiting) {
       const waiting = document.createElement("span");
       waiting.className = "status-chip";
-      waiting.textContent = "Menunggu slot";
+      waiting.textContent = copy.waitingSlotShort;
       cardSide.append(waiting);
     }
     if (place.folder.length > 0) {
@@ -1860,7 +2072,7 @@ function renderForkResult(
       folder.className = "fork-folder";
       const folderLabel = document.createElement("span");
       folderLabel.className = "fork-folder-label";
-      folderLabel.textContent = "Folder tujuan";
+      folderLabel.textContent = copy.destFolder;
       const folderPath = document.createElement("span");
       folderPath.className = "fork-folder-path";
       folderPath.textContent = place.folder;
@@ -1871,8 +2083,7 @@ function renderForkResult(
     rule.className = "fork-queue-rule";
     const note = document.createElement("p");
     note.className = "fork-queue-note";
-    note.textContent =
-      "Unduhan dimulai saat slot tersedia. Progres muncul di antrean yang sama dengan repo lainnya.";
+    note.textContent = copy.forkQueueNote;
     cardSide.append(rule, note, seeDownloads());
     columns.append(cardSide);
   }
@@ -1880,13 +2091,13 @@ function renderForkResult(
   if (view.queued) {
     const persist = document.createElement("p");
     persist.className = "fork-persist";
-    persist.textContent =
-      "Hasil unduhan baru masuk Library setelah proses unduh dan ekstraksi selesai.";
+    persist.textContent = copy.forkPersist;
     detail.append(persist);
   }
 }
 
 function renderDetail(): void {
+  renderSelection();
   detail.replaceChildren();
   const card = detailCard;
   if (!card || currentId() !== "discover") {
@@ -1909,7 +2120,7 @@ function renderDetail(): void {
   back.className = "back";
   back.append(document.createRange().createContextualFragment(svg(arrowLeftIcon, 15)));
   const backLabel = document.createElement("span");
-  backLabel.textContent = "Kembali ke Discover";
+  backLabel.textContent = copy.backDiscover;
   back.append(backLabel);
   back.addEventListener("click", () => {
     detailCard = null;
@@ -1925,7 +2136,7 @@ function renderDetail(): void {
   heading.textContent = repoTitle(card);
   const desc = document.createElement("p");
   desc.className = "desc";
-  desc.textContent = descriptionOf(card);
+  desc.textContent = shownDescription(card);
   intro.append(heading, desc);
   const head = document.createElement("div");
   head.className = "detail-head";
@@ -1939,13 +2150,13 @@ function renderDetail(): void {
     link.target = "_blank";
     link.append(document.createRange().createContextualFragment(svg(arrowUpRightIcon, 16)));
     const linkLabel = document.createElement("span");
-    linkLabel.textContent = "Buka di GitHub";
+    linkLabel.textContent = copy.openOnGithub;
     link.append(linkLabel);
     head.append(link);
   }
   const meta = document.createElement("div");
   meta.className = "detail-meta";
-  meta.append(detailChip("Public"));
+  meta.append(detailChip(copy.publicChip));
   const language = card.language.trim();
   if (language.length > 0) {
     meta.append(detailChip(language));
@@ -1957,19 +2168,19 @@ function renderDetail(): void {
   overview.className = "overview";
   const aboutTitle = document.createElement("h3");
   aboutTitle.className = "about-title";
-  aboutTitle.textContent = "Tentang repo";
+  aboutTitle.textContent = copy.aboutRepo;
   const about = document.createElement("p");
   about.className = "desc";
-  about.textContent = descriptionOf(card);
+  about.textContent = shownDescription(card);
   const gets = document.createElement("div");
   gets.className = "gets";
   const getsTitle = document.createElement("h3");
-  getsTitle.textContent = "Yang akan kamu dapatkan";
+  getsTitle.textContent = copy.youGet;
   const getsList = document.createElement("ul");
   for (const [icon, text] of [
-    [folderGitIcon, "Snapshot isi repo pada branch yang dipilih"],
-    [folderIcon, "Hasil ekstraksi di folder unduhanmu"],
-    [infoIcon, "Histori Git dan folder .git tidak disertakan"],
+    [folderGitIcon, copy.getSnapshot],
+    [folderIcon, copy.getExtract],
+    [infoIcon, copy.getNoGit],
   ] as const) {
     const item = document.createElement("li");
     item.append(document.createRange().createContextualFragment(svg(icon, 16)));
@@ -1983,7 +2194,7 @@ function renderDetail(): void {
   const panel = document.createElement("aside");
   panel.className = "take-panel";
   const panelTitle = document.createElement("h3");
-  panelTitle.textContent = "Bawa ke ruang kerjamu";
+  panelTitle.textContent = copy.takeTitle;
   const choices = document.createElement("div");
   choices.className = "choices";
   const connected = githubView?.connected === true;
@@ -1995,17 +2206,17 @@ function renderDetail(): void {
     detailChoice = "download";
   }
   const hints: Record<DetailChoice, string> = {
-    download: "Simpan ke perangkat",
-    queue: "Masukkan ke antrean unduhan",
-    fork: "Salin ke akun GitHub",
-    "fork-download": "Unduh hasil fork milikmu",
+    download: copy.hintDownload,
+    queue: copy.hintQueue,
+    fork: copy.hintFork,
+    "fork-download": copy.hintForkDownload,
   };
   const rows: { id: DetailChoice; label: string }[] = detailTakes(connected).map((take) => ({
     id: take.id,
-    label: take.label,
+    label: take.id === "download" ? (connected ? copy.onlyDownload : copy.download) : take.id === "fork" ? copy.onlyFork : copy.forkThenDownload,
   }));
   if (!connected) {
-    rows.push({ id: "queue", label: "Tambah ke antrean" });
+    rows.push({ id: "queue", label: copy.addToQueue });
   }
   for (const row of rows) {
     choices.append(
@@ -2016,12 +2227,12 @@ function renderDetail(): void {
   }
   const permit = document.createElement("p");
   permit.className = "permit";
-  permit.textContent = "Fork hanya dibuat jika kamu memilih tindakan fork.";
+  permit.textContent = copy.permit;
   panel.append(panelTitle, detailRule(), choices, detailRule(), permit);
   if (forkNote) {
     const note = document.createElement("p");
     note.className = "fork-note";
-    note.textContent = forkNote;
+    note.textContent = displayText(forkNote);
     panel.append(note);
   }
   workspace.append(overview, panel);
@@ -2099,7 +2310,7 @@ async function chooseFolder(): Promise<string | null> {
       picked = await open({
         directory: true,
         multiple: false,
-        title: "Folder unduhan",
+        title: copy.folderDownloads,
         ...(current.length > 0 ? { defaultPath: current } : {}),
       });
     } catch {
@@ -2121,7 +2332,7 @@ async function chooseFolder(): Promise<string | null> {
     } catch (err: unknown) {
       const message = typeof err === "string" ? err : "";
       if (currentId() === "settings") {
-        settingsNote.textContent = message;
+        settingsNote.textContent = displayText(message);
       } else {
         paintPasteNote(message);
       }
@@ -2314,7 +2525,7 @@ let settingsTicket = 0;
 
 function readAppSettings(
   value: unknown,
-): { defaultFolder: string; concurrency: number; githubClientId: string } | null {
+): { defaultFolder: string; concurrency: number; githubClientId: string; language: string } | null {
   if (value === null || typeof value !== "object") {
     return null;
   }
@@ -2332,6 +2543,7 @@ function readAppSettings(
     defaultFolder: body.defaultFolder,
     concurrency: body.concurrency,
     githubClientId: body.githubClientId,
+    language: typeof body.language === "string" ? body.language : "id",
   };
 }
 
@@ -2348,27 +2560,11 @@ function loadAppSettings(): void {
       }
       downloadConcurrency = body.concurrency;
       paintDownloadFolder(body.defaultFolder);
-      if (currentId() !== "settings") {
-        return;
+      if (!languageTouched && parseLocale(body.language) !== locale) {
+        applyLocale(parseLocale(body.language));
       }
-      if (document.activeElement !== clientField) {
-        clientField.value = body.githubClientId;
-      }
-      paintClientRow();
     })
     .catch(() => undefined);
-}
-
-function saveClientId(): void {
-  settingsNote.textContent = "";
-  void invoke("set_github_client_id", { clientId: clientField.value })
-    .then(() => {
-      paintClientRow();
-    })
-    .catch((err: unknown) => {
-      settingsNote.textContent = typeof err === "string" ? err : UNPREPARED;
-      paintClientRow();
-    });
 }
 
 function rememberPending(cards: readonly DiscoverCard[]): void {
@@ -2481,7 +2677,7 @@ function renderDiscover(cards: DiscoverCard[], kind: DiscoverNotice): void {
     box.type = "checkbox";
     box.className = "check";
     const key = cardKey(card);
-    box.setAttribute("aria-label", `Pilih ${repoTitle(card)}`);
+    box.setAttribute("aria-label", fill(copy.pickRepo, { name: repoTitle(card) }));
     box.checked = selected.has(key);
     box.addEventListener("change", () => {
       if (box.checked) {
@@ -2506,7 +2702,7 @@ function renderDiscover(cards: DiscoverCard[], kind: DiscoverNotice): void {
     info.className = "repo-info";
     const desc = document.createElement("p");
     desc.className = "desc";
-    desc.textContent = descriptionOf(card);
+    desc.textContent = shownDescription(card);
     const meta = document.createElement("div");
     meta.className = "repo-meta";
     const language = card.language.trim();
@@ -2522,7 +2718,7 @@ function renderDiscover(cards: DiscoverCard[], kind: DiscoverNotice): void {
     }
     meta.append(metric(starIcon, String(card.stars)), metric(forkIcon, String(card.forks)));
     info.append(name, desc, meta);
-    const download = quietAction(downloadIcon, "Unduh");
+    const download = quietAction(downloadIcon, copy.download);
     download.addEventListener("click", () => {
       void queueCards([card]);
     });
@@ -2540,11 +2736,9 @@ function renderDiscover(cards: DiscoverCard[], kind: DiscoverNotice): void {
   discoverStatus.card.hidden = !limited && !failed;
   if (limited || failed) {
     discoverStatus.glyph.innerHTML = svg(limited ? clockIcon : alertIcon, 18);
-    discoverStatus.eyebrowText.textContent = limited ? "Discover / Batas GitHub" : "Discover";
-    discoverStatus.title.textContent = limited ? LIMIT_MESSAGE : FAILED_MESSAGE;
-    discoverStatus.description.textContent = limited
-      ? "Coba setelah kuota direset. Unduhan dalam antrean tetap berjalan."
-      : "";
+    discoverStatus.eyebrowText.textContent = limited ? copy.limitEyebrow : copy.discoverEyebrow;
+    discoverStatus.title.textContent = limited ? copy.limitMessage : copy.failedSearch;
+    discoverStatus.description.textContent = limited ? copy.limitHint : "";
     discoverStatus.description.hidden = !limited;
   }
   discoverEmpty.card.hidden = kind !== "empty";
@@ -2616,7 +2810,7 @@ function paintDone(open: boolean): void {
   if (!open) {
     return;
   }
-  doneTitle.textContent = `${doneRows.length} repo siap dibuka`;
+  doneTitle.textContent = fill(copy.reposReady, { count: doneRows.length });
   for (const row of doneRows) {
     const item = document.createElement("li");
     const icon = document.createElement("span");
@@ -2637,15 +2831,14 @@ function paintDone(open: boolean): void {
     info.append(name, path, meta);
     const status = document.createElement("span");
     status.className = "status-chip is-selesai";
-    status.textContent = "Selesai";
-    const openFolder = quietAction(folderOpenIcon, "Buka folder");
+    status.textContent = copy.statusDone;
+    const openFolder = quietAction(folderOpenIcon, copy.openFolder);
     const note = document.createElement("span");
     note.className = "open-error";
     openFolder.addEventListener("click", () => {
       note.textContent = "";
       void invoke("open_history_folder", { id: row.id }).catch((err: unknown) => {
-        note.textContent =
-          typeof err === "string" && err.length > 0 ? err : "Folder tidak bisa dipakai, pilih yang lain";
+        note.textContent = folderError(err);
       });
     });
     item.append(icon, info, status, openFolder, note);
@@ -2668,11 +2861,11 @@ function failQueueRow(row: QueueRow): HTMLLIElement {
   const reason = document.createElement("span");
   reason.className = "error is-failed";
   const message = rowMessage(row);
-  reason.textContent = message;
+  reason.textContent = displayText(message);
   body.append(name, reason);
   const status = document.createElement("span");
   status.className = "status-chip is-gagal";
-  status.textContent = statusLabel(row.status);
+  status.textContent = statusLabel(row.status, statusPhrases());
   const actions = document.createElement("span");
   actions.className = "row-actions";
   const inspect = message === "Repositori tidak tersedia";
@@ -2681,7 +2874,7 @@ function failQueueRow(row: QueueRow): HTMLLIElement {
   button.className = "retry-btn";
   button.append(document.createRange().createContextualFragment(svg(inspect ? linkIcon : retryIcon, 16)));
   const label = document.createElement("span");
-  label.textContent = inspect ? "Periksa tautan" : "Ulang";
+  label.textContent = inspect ? copy.inspectLink : copy.retry;
   button.append(label);
   button.addEventListener("click", () => {
     if (inspect) {
@@ -2783,13 +2976,13 @@ function paintAddChoices(): void {
 
 function paintAddButton(): void {
   const reviewed = addLinks.value === addReviewed && addAccepted !== null && addAccepted > 0;
-  addSubmitLabel.textContent = reviewed ? `Tambahkan ${addAccepted} repo` : "Tambahkan";
+  addSubmitLabel.textContent = reviewed ? fill(copy.addSubmitCount, { count: addAccepted ?? 0 }) : copy.addSubmit;
 }
 
 function paintAddReview(queued: number, reasons: readonly string[]): void {
   addReviewCount.hidden = queued <= 0;
   if (queued > 0) {
-    addReviewCount.textContent = `${queued} tautan siap ditambahkan`;
+    addReviewCount.textContent = fill(copy.linksReady, { count: queued });
   }
   addReviewReasons.replaceChildren();
   for (const reason of reasons) {
@@ -2797,7 +2990,7 @@ function paintAddReview(queued: number, reasons: readonly string[]): void {
       continue;
     }
     const line = document.createElement("p");
-    line.textContent = reason.trim();
+    line.textContent = displayText(reason.trim());
     addReviewReasons.append(line);
   }
   paintAddButton();
@@ -2806,6 +2999,8 @@ function paintAddReview(queued: number, reasons: readonly string[]): void {
 function rememberAddReview(text: string, queued: number, reasons: readonly string[]): void {
   addReviewed = text;
   addAccepted = queued;
+  addReviewQueued = queued;
+  addReviewLines = [...reasons];
   paintAddReview(queued, reasons);
 }
 
@@ -2926,20 +3121,20 @@ function downloadFigures(row: QueueRow): string {
   if (percent !== null && row.total !== null) {
     figureParts.push(`${formatSize(row.bytes)} / ${formatSize(row.total)}`);
   } else if (row.bytes > 0) {
-    figureParts.push(`${formatSize(row.bytes)} terunduh`);
+    figureParts.push(fill(copy.downloaded, { size: formatSize(row.bytes) }));
   }
   if (row.status === "berjalan" && speed !== null && speed >= 1) {
     figureParts.push(formatRate(speed));
     if (percent !== null && row.total !== null && row.total > row.bytes) {
       const seconds = Math.ceil((row.total - row.bytes) / speed);
-      figureParts.push(`sisa ${seconds} detik`);
+      figureParts.push(fill(copy.remaining, { seconds }));
     }
   }
   return figureParts.join("  ·  ");
 }
 
 function paintDownloadDetail(row: QueueRow): void {
-  const key = `${row.id}\t${row.status}\t${row.error}`;
+  const key = `${locale}\t${row.id}\t${row.status}\t${row.error}`;
   const text = downloadFigures(row);
   const existing = downloadDetail.querySelector(".download-figures");
   if (downloadDetail.dataset.key === key && (text.length === 0) === !existing) {
@@ -2956,7 +3151,7 @@ function paintDownloadDetail(row: QueueRow): void {
   back.className = "back";
   back.append(document.createRange().createContextualFragment(svg(arrowLeftIcon, 15)));
   const backLabel = document.createElement("span");
-  backLabel.textContent = "Kembali ke Downloads";
+  backLabel.textContent = copy.backDownloads;
   back.append(backLabel);
   back.addEventListener("click", () => {
     downloadDetailId = null;
@@ -2971,7 +3166,7 @@ function paintDownloadDetail(row: QueueRow): void {
   if (row.status === "berjalan" || row.status === "gagal" || row.status === "selesai") {
     status.classList.add(`is-${row.status}`);
   }
-  status.textContent = statusLabel(row.status);
+  status.textContent = statusLabel(row.status, statusPhrases());
   progress.append(status);
   const figures = document.createElement("p");
   figures.className = "download-figures";
@@ -2983,30 +3178,36 @@ function paintDownloadDetail(row: QueueRow): void {
   if (message.length > 0) {
     const error = document.createElement("p");
     error.className = "error";
-    error.textContent = message;
+    error.textContent = displayText(message);
     progress.append(error);
   }
   const actions = document.createElement("div");
   actions.className = "download-actions";
   if (row.status === "berjalan") {
-    const pause = quietAction(pauseIcon, "Jeda unduhan");
+    const pause = quietAction(pauseIcon, copy.pauseDownload);
     pause.addEventListener("click", () => {
       runQueue("queue_pause", row.id);
     });
     actions.append(pause);
   } else if (row.status === "dijeda") {
-    const resume = quietAction(playIcon, "Lanjut");
+    const resume = quietAction(playIcon, copy.resume);
     resume.addEventListener("click", () => {
       runQueue("queue_resume", row.id);
     });
     actions.append(resume);
   }
   if (row.status === "berjalan" || row.status === "dijeda" || row.status === "menunggu") {
-    const cancel = quietAction(cancelIcon, "Batalkan");
+    const cancel = quietAction(cancelIcon, copy.cancelDownload);
     cancel.addEventListener("click", () => {
       runQueue("queue_cancel", row.id);
     });
     actions.append(cancel);
+  } else if (row.status === "dibatalkan") {
+    const remove = quietAction(cancelIcon, copy.dismiss);
+    remove.addEventListener("click", () => {
+      runQueue("queue_dismiss", row.id);
+    });
+    actions.append(remove);
   }
   if (actions.childElementCount > 0) {
     progress.append(actions);
@@ -3015,23 +3216,23 @@ function paintDownloadDetail(row: QueueRow): void {
   facts.className = "download-facts";
   const href = githubHref(row.owner, row.repo);
   if (href) {
-    facts.append(factRow("Sumber", href.replace(/^https:\/\//, "")));
+    facts.append(factRow(copy.source, href.replace(/^https:\/\//, "")));
   }
   const ref = row.gitRef.trim();
   if (ref.length > 0) {
-    facts.append(factRow("Branch / ref", ref));
+    facts.append(factRow(copy.branchRef, ref));
   }
-  facts.append(factRow("Format", "Snapshot repo, tanpa histori Git"));
+  facts.append(factRow(copy.formatLabel, copy.formatValue));
   const stages = document.createElement("aside");
   stages.className = "download-stages";
   const stagesTitle = document.createElement("h3");
-  stagesTitle.textContent = "Tahap unduhan";
+  stagesTitle.textContent = copy.stagesTitle;
   const stageList = document.createElement("ol");
   for (const [label, description] of [
-    ["Repo diperiksa", "Tautan repo publik valid"],
-    ["Mengunduh arsip", "Menerima isi repositori"],
-    ["Mengekstrak", "Dimulai setelah unduhan selesai"],
-    ["Siap dibuka", "Folder muncul di Library"],
+    [copy.stageChecked, copy.stageCheckedDesc],
+    [copy.stageArchive, copy.stageArchiveDesc],
+    [copy.stageExtract, copy.stageExtractDesc],
+    [copy.stageReady, copy.stageReadyDesc],
   ] as const) {
     const item = document.createElement("li");
     const name = document.createElement("span");
@@ -3042,8 +3243,7 @@ function paintDownloadDetail(row: QueueRow): void {
     stageList.append(item);
   }
   const rule = document.createElement("p");
-  rule.textContent =
-    "Selesai berarti arsip sudah diekstrak utuh. Folder belum bisa dibuka selama proses ini.";
+  rule.textContent = copy.stageRule;
   stages.append(stagesTitle, stageList, rule);
   const workspace = document.createElement("div");
   workspace.className = "download-workspace";
@@ -3078,7 +3278,7 @@ function applyDownloadsOverlay(): boolean {
     addWorkspace.hidden = false;
     pageHead.hidden = false;
     addRepo.hidden = true;
-    title.textContent = "Tambah repo";
+    title.textContent = copy.addRepo;
     addFolderPath.textContent = downloadFolder;
     paintAddChoices();
     paintAddButton();
@@ -3105,19 +3305,22 @@ function applyDownloadsOverlay(): boolean {
 }
 
 function queueRowKey(row: QueueRow): string {
-  return `${row.id}\t${row.status}\t${row.gitRef}`;
+  return `${locale}\t${row.id}\t${row.status}\t${row.gitRef}`;
 }
 
 function paintQueueProgress(item: HTMLElement, row: QueueRow): void {
   const note = item.querySelector(".repo-body > .error");
   if (note) {
-    note.textContent = transferLine({
-      status: row.status,
-      bytes: row.bytes,
-      total: row.total,
-      speed: latestSpeeds.get(row.id) ?? null,
-      error: rowMessage(row),
-    });
+    note.textContent = transferLine(
+      {
+        status: row.status,
+        bytes: row.bytes,
+        total: row.total,
+        speed: latestSpeeds.get(row.id) ?? null,
+        error: rowMessage(row),
+      },
+      queuePhrases(),
+    );
   }
   const body = item.querySelector(".repo-body");
   if (!(body instanceof HTMLElement)) {
@@ -3189,16 +3392,16 @@ function renderQueue(rows: QueueRow[]): void {
   }
   const parts: string[] = [];
   if (counts.menunggu > 0) {
-    parts.push(`${counts.menunggu} menunggu`);
+    parts.push(fill(copy.waitingCount, { count: counts.menunggu }));
   }
   if (dijeda > 0) {
-    parts.push(`${dijeda} dijeda`);
+    parts.push(fill(copy.pausedCount, { count: dijeda }));
   }
   if (counts.gagal > 0) {
-    parts.push(`${counts.gagal} perlu dicoba ulang`);
+    parts.push(fill(copy.retryCount, { count: counts.gagal }));
   }
   transferHead.hidden = counts.berjalan === 0;
-  transferHeadline.textContent = counts.berjalan > 0 ? `${counts.berjalan} repo sedang diunduh` : "";
+  transferHeadline.textContent = counts.berjalan > 0 ? fill(copy.reposDownloading, { count: counts.berjalan }) : "";
   transferDetail.textContent = parts.join("  ·  ");
   pauseAll.disabled = counts.berjalan === 0;
   const noRows = rows.length === 0;
@@ -3213,12 +3416,12 @@ function renderQueue(rows: QueueRow[]): void {
   action.hidden = true;
   failBanner.hidden = !failAttention;
   if (failAttention) {
-    failTitle.textContent = `${counts.gagal} unduhan perlu perhatian`;
+    failTitle.textContent = fill(copy.failAttention, { count: counts.gagal });
   }
   const othersRunning = failAttention && counts.berjalan > 0;
   failRunning.hidden = !othersRunning;
   if (othersRunning) {
-    failRunning.textContent = `${counts.berjalan} unduhan lain masih berjalan`;
+    failRunning.textContent = fill(copy.otherStillRunning, { count: counts.berjalan });
   }
   queueFoot.hidden = failAttention || downloadFolder.trim().length === 0;
   paintHeadingAction(failAttention);
@@ -3295,13 +3498,16 @@ function renderQueue(rows: QueueRow[]): void {
     if (row.status === "gagal") {
       note.classList.add("is-failed");
     }
-    note.textContent = transferLine({
-      status: row.status,
-      bytes: row.bytes,
-      total: row.total,
-      speed: latestSpeeds.get(row.id) ?? null,
-      error: rowMessage(row),
-    });
+    note.textContent = transferLine(
+      {
+        status: row.status,
+        bytes: row.bytes,
+        total: row.total,
+        speed: latestSpeeds.get(row.id) ?? null,
+        error: rowMessage(row),
+      },
+      queuePhrases(),
+    );
     body.append(identity, note);
     const percent = percentOf(row.bytes, row.total);
     if (percent !== null && (row.status === "berjalan" || row.status === "dijeda")) {
@@ -3317,7 +3523,7 @@ function renderQueue(rows: QueueRow[]): void {
     if (row.status === "berjalan" || row.status === "gagal" || row.status === "selesai") {
       status.classList.add(`is-${row.status}`);
     }
-    status.textContent = statusLabel(row.status);
+    status.textContent = statusLabel(row.status, statusPhrases());
     const actions = document.createElement("span");
     actions.className = "row-actions";
     if (row.status === "gagal") {
@@ -3326,7 +3532,7 @@ function renderQueue(rows: QueueRow[]): void {
       retry.className = "retry-btn";
       retry.innerHTML = svg(retryIcon, 16);
       const retryLabel = document.createElement("span");
-      retryLabel.textContent = "Ulang";
+      retryLabel.textContent = copy.retry;
       retry.append(retryLabel);
       retry.addEventListener("click", () => {
         runQueue("queue_retry", row.id);
@@ -3334,31 +3540,37 @@ function renderQueue(rows: QueueRow[]): void {
       actions.append(retry);
     } else if (row.status === "dijeda") {
       actions.append(
-        rowIconButton(playIcon, "Lanjut", () => {
+        rowIconButton(playIcon, copy.resume, () => {
           runQueue("queue_resume", row.id);
         }),
-        rowIconButton(cancelIcon, "Batal", () => {
+        rowIconButton(cancelIcon, copy.cancel, () => {
           runQueue("queue_cancel", row.id);
         }),
       );
     } else if (row.status === "berjalan") {
       actions.append(
-        rowIconButton(pauseIcon, "Jeda", () => {
+        rowIconButton(pauseIcon, copy.pause, () => {
           runQueue("queue_pause", row.id);
         }),
-        rowIconButton(cancelIcon, "Batal", () => {
+        rowIconButton(cancelIcon, copy.cancel, () => {
           runQueue("queue_cancel", row.id);
         }),
       );
     } else if (row.status === "menunggu") {
       actions.append(
-        rowIconButton(pauseIcon, "Jeda"),
-        rowIconButton(cancelIcon, "Batal", () => {
+        rowIconButton(pauseIcon, copy.pause),
+        rowIconButton(cancelIcon, copy.cancel, () => {
           runQueue("queue_cancel", row.id);
         }),
       );
+    } else if (row.status === "dibatalkan") {
+      actions.append(
+        rowIconButton(cancelIcon, copy.dismiss, () => {
+          runQueue("queue_dismiss", row.id);
+        }),
+      );
     } else {
-      actions.append(rowIconButton(pauseIcon, "Jeda"), rowIconButton(cancelIcon, "Batal"));
+      actions.append(rowIconButton(pauseIcon, copy.pause), rowIconButton(cancelIcon, copy.cancel));
     }
     item.dataset.key = queueRowKey(row);
     item.append(tile, body, status, actions);
@@ -3381,7 +3593,7 @@ function recentWhen(value: string): string {
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
   if (sameDay) {
-    return `Hari ini, ${clock}`;
+    return fill(copy.todayAt, { clock });
   }
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -3405,13 +3617,10 @@ function applyHomeMode(): void {
   const first = homeIsFirst();
   home.classList.toggle("is-first", first);
   if (first) {
-    title.textContent = "Selamat datang di Peti.";
+    title.textContent = copy.homeWelcome;
     return;
   }
-  const page = pages.find((item) => item.id === "home");
-  if (page) {
-    title.textContent = page.title;
-  }
+  title.textContent = copy.homeTitle;
 }
 
 function renderHomeStrip(rows: QueueRow[]): void {
@@ -3433,9 +3642,9 @@ function renderHomeStrip(rows: QueueRow[]): void {
       gagal += 1;
     }
   }
-  homeHeadline.textContent = berjalan > 0 ? `${berjalan} unduhan berjalan` : "";
-  homeDetail.textContent = menunggu > 0 ? `${menunggu} repo menunggu` : "";
-  homeFail.textContent = gagal > 0 ? `${gagal} gagal` : "";
+  homeHeadline.textContent = berjalan > 0 ? fill(copy.running, { count: berjalan }) : "";
+  homeDetail.textContent = menunggu > 0 ? fill(copy.waitingRepos, { count: menunggu }) : "";
+  homeFail.textContent = gagal > 0 ? fill(copy.failedCount, { count: gagal }) : "";
   homeFail.hidden = gagal === 0;
   homeStrip.hidden = berjalan === 0 && menunggu === 0 && gagal === 0;
 }
@@ -3475,15 +3684,14 @@ function renderRecent(rows: HistoryRow[]): void {
     open.className = "open-folder";
     open.append(document.createRange().createContextualFragment(svg(folderOpenIcon, 16)));
     const openLabel = document.createElement("span");
-    openLabel.textContent = "Buka folder";
+    openLabel.textContent = copy.openFolder;
     open.append(openLabel);
     const note = document.createElement("span");
     note.className = "open-error";
     open.addEventListener("click", () => {
       note.textContent = "";
       void invoke("open_history_folder", { id: row.id }).catch((err: unknown) => {
-        note.textContent =
-          typeof err === "string" && err.length > 0 ? err : "Folder tidak bisa dipakai, pilih yang lain";
+        note.textContent = folderError(err);
       });
     });
     item.append(icon, info, when, open, note);
@@ -3493,6 +3701,7 @@ function renderRecent(rows: HistoryRow[]): void {
 }
 
 function renderHistory(id: PageId, rows: HistoryRow[]): void {
+  historyCache = rows;
   if (id === "home") {
     renderRecent(rows);
     return;
@@ -3535,7 +3744,7 @@ function renderHistory(id: PageId, rows: HistoryRow[]): void {
     const open = document.createElement("button");
     open.type = "button";
     open.className = "open";
-    open.textContent = "Buka folder";
+    open.textContent = copy.openFolder;
     const note = document.createElement("span");
     note.className = "open-error";
     open.addEventListener("click", () => {
@@ -3544,7 +3753,7 @@ function renderHistory(id: PageId, rows: HistoryRow[]): void {
         note.textContent =
           typeof err === "string" && err.length > 0
             ? err
-            : "Folder tidak bisa dipakai, pilih yang lain";
+            : copy.folderUnusable;
       });
     });
     item.append(name, folder, when, open, note);
@@ -3565,11 +3774,7 @@ function show(id: PageId): void {
   if (location.hash !== `#${id}`) {
     history.replaceState(null, "", `#${id}`);
   }
-  title.textContent = page.title;
-  crumbSection.textContent = page.section;
-  crumbPage.textContent = page.label;
-  empty.textContent = page.empty;
-  action.textContent = page.action.label;
+  paintPageChrome();
   action.onclick = () => show(page.action.target);
   queueTicket += 1;
   clearQueuePoll();
@@ -3597,6 +3802,7 @@ function show(id: PageId): void {
   themeBlock.hidden = !isSettings;
   githubTicket += 1;
   clearGithubTimer();
+  githubPollHold = false;
   githubBlock.hidden = !isSettings;
   discoverFilters.hidden = !isDiscover;
   notice.hidden = true;
@@ -3607,6 +3813,7 @@ function show(id: PageId): void {
   discoverList.hidden = true;
   discoverList.replaceChildren();
   selectionBar.hidden = true;
+  surface.classList.remove("has-selection");
   detail.hidden = true;
   clearDiscoverTimer();
   discoverTicket += 1;
@@ -3714,9 +3921,26 @@ sideAccount.addEventListener("click", () => show("settings"));
 function paintAccount(): void {
   const login = githubView?.connected === true ? githubView.login : "";
   const connected = login.length > 0;
-  accountName.textContent = connected ? login : "Tanpa akun";
-  accountState.textContent = connected ? "GitHub terhubung" : "Hubungkan GitHub";
+  const name = connected && githubView?.name ? githubView.name : "";
+  accountName.textContent = connected ? name || login : copy.noAccount;
+  accountState.textContent = connected ? copy.accountConnected : copy.accountConnect;
   avatar.replaceChildren();
+  const photo = connected ? githubView?.avatarUrl ?? "" : "";
+  if (photo) {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.referrerPolicy = "no-referrer";
+    img.src = photo;
+    img.addEventListener("error", () => {
+      if (!avatar.contains(img)) {
+        return;
+      }
+      avatar.replaceChildren();
+      avatar.textContent = login.slice(0, 1).toUpperCase();
+    });
+    avatar.append(img);
+    return;
+  }
   if (connected) {
     avatar.textContent = login.slice(0, 1).toUpperCase();
   } else {
@@ -3779,22 +4003,15 @@ addSelected.addEventListener("click", () => {
   void queueCards([...selected.values()]);
 });
 
-clearSelected.addEventListener("click", () => {
-  selected.clear();
-  renderSelection();
-  if (currentId() === "discover") {
-    renderDiscover(discoverCards, discoverNotice);
-  }
-});
-
 githubButton.addEventListener("click", () => {
   if (currentId() !== "settings" || githubButton.hidden) {
     return;
   }
-  const leaving = githubButton.textContent === "Keluar";
+  const leaving = githubView?.connected === true;
   if (leaving) {
     deviceFlowOpen = false;
   } else {
+    githubPollHold = false;
     deviceFlowOpen = true;
     paintDeviceFlow();
   }
@@ -3827,6 +4044,15 @@ githubButton.addEventListener("click", () => {
 window.addEventListener("hashchange", () => show(currentId()));
 show(currentId());
 
+void invoke("saved_language")
+  .then((saved) => {
+    if (languageTouched || parseLocale(saved) === locale) {
+      return;
+    }
+    applyLocale(parseLocale(saved));
+  })
+  .catch(() => undefined);
+
 void invoke("saved_theme")
   .then((saved) => {
     if (themeTouched) {
@@ -3839,5 +4065,26 @@ void invoke("saved_theme")
         input.checked = input.value === theme;
       }
     }
+  })
+  .catch(() => undefined);
+
+void getVersion()
+  .then((version) => {
+    const trimmed = version.trim();
+    if (trimmed.length === 0) {
+      return;
+    }
+    appVersion = trimmed;
+    settingsVersion.textContent = `Peti ${appVersion}`;
+  })
+  .catch(() => undefined);
+
+void check()
+  .then(async (update) => {
+    if (!update) {
+      return;
+    }
+    await update.downloadAndInstall();
+    await relaunch();
   })
   .catch(() => undefined);

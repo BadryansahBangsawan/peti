@@ -23,3 +23,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 - [Relevance AI task filters](https://mobbin.com/screens/11dc1da7-db6d-4887-8f2e-13916ca07ed8): sidebar hierarchy and status filtering.
 
 All exported PNGs are renders of the authored editable canvas, not generated or sourced artwork. The logo reuses the exact path geometry from the repository SVG; lucide supplies icons. Mock names, metrics, dates, paths and codes are illustrative and labelled in the screens.
+
+## Continuation scope
+
+The user requested the missing pages be continued. The visual world and existing product scope are preserved. Twelve added screens turn transfer detail/completion/failure, filtered search, first use, empty Library, guest Settings and fork result into full-page compositions, then complete dark variants for Home, Discover, Library and Settings. No new product domain or navigation destination is introduced. Original core pages remain in place; new pages are grouped below the state boards.

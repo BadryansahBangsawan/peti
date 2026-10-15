@@ -135,6 +135,8 @@ struct Pending {
 pub struct LoginView {
     pub connected: bool,
     pub login: String,
+    pub name: String,
+    pub avatar_url: String,
     pub user_code: String,
     pub interval: u64,
     pub open_page: bool,
@@ -192,6 +194,29 @@ impl<S: Secrets> Session<S> {
             Ok(Some(account)) => {
                 self.clear_pending();
                 Ok(connected_view(&account))
+            }
+            Ok(None) => Ok(self.pending_view(false)),
+        }
+    }
+
+    pub fn profile<F>(&self, mut fetch: F) -> Result<LoginView, LoginError>
+    where
+        F: FnMut(&str, &str, &str, Option<&str>) -> Result<(u16, String), LoginError>,
+    {
+        match self.secrets.load() {
+            Err(()) => Err(LoginError::NotRun),
+            Ok(Some(account)) => {
+                self.clear_pending();
+                let mut view = connected_view(&account);
+                if let Ok((200, body)) = fetch("GET", USER_URL, "", Some(account.token.as_str())) {
+                    let shown = profile_from_user(&body);
+                    if is_name(&shown.login) {
+                        view.login = shown.login;
+                    }
+                    view.name = shown.name;
+                    view.avatar_url = shown.avatar_url;
+                }
+                Ok(view)
             }
             Ok(None) => Ok(self.pending_view(false)),
         }
@@ -372,19 +397,21 @@ impl<S: Secrets> Session<S> {
     where
         F: FnMut(&str, &str, &str, Option<&str>) -> Result<(u16, String), LoginError>,
     {
-        let login = match fetch("GET", USER_URL, "", Some(token)) {
-            Ok((200, body)) => login_from_user(&body),
-            _ => String::new(),
+        let shown = match fetch("GET", USER_URL, "", Some(token)) {
+            Ok((200, body)) => profile_from_user(&body),
+            _ => ShownProfile::blank(),
         };
         let saved = self.secrets.save(&Account {
             token: token.to_owned(),
-            login: login.clone(),
+            login: shown.login.clone(),
         });
         self.clear_code(device_code);
         saved.map_err(|_| LoginError::NotRun)?;
         Ok(LoginView {
             connected: true,
-            login,
+            login: shown.login,
+            name: shown.name,
+            avatar_url: shown.avatar_url,
             user_code: String::new(),
             interval: 0,
             open_page: false,
@@ -452,6 +479,8 @@ fn connected_view(account: &Account) -> LoginView {
         } else {
             String::new()
         },
+        name: String::new(),
+        avatar_url: String::new(),
         user_code: String::new(),
         interval: 0,
         open_page: false,
@@ -462,6 +491,8 @@ fn waiting_view(pending: &Pending, open_page: bool) -> LoginView {
     LoginView {
         connected: false,
         login: String::new(),
+        name: String::new(),
+        avatar_url: String::new(),
         user_code: pending.user_code.clone(),
         interval: pending.interval,
         open_page,
@@ -472,6 +503,8 @@ fn logged_out_view() -> LoginView {
     LoginView {
         connected: false,
         login: String::new(),
+        name: String::new(),
+        avatar_url: String::new(),
         user_code: String::new(),
         interval: 0,
         open_page: false,
@@ -640,14 +673,82 @@ fn parse_device(now: u64, status: u16, body: &str) -> Result<Pending, LoginError
     })
 }
 
-fn login_from_user(body: &str) -> String {
+struct ShownProfile {
+    login: String,
+    name: String,
+    avatar_url: String,
+}
+
+impl ShownProfile {
+    fn blank() -> Self {
+        Self {
+            login: String::new(),
+            name: String::new(),
+            avatar_url: String::new(),
+        }
+    }
+}
+
+fn profile_from_user(body: &str) -> ShownProfile {
     let Some(map) = fields(body) else {
-        return String::new();
+        return ShownProfile::blank();
     };
-    match text_field(&map, "login") {
+    let login = match text_field(&map, "login") {
         Some(login) if is_name(&login) => login,
         _ => String::new(),
+    };
+    let raw_name = map.get("name").and_then(|value| value.as_str()).unwrap_or("");
+    let raw_avatar = map
+        .get("avatar_url")
+        .and_then(|value| value.as_str())
+        .unwrap_or("");
+    ShownProfile {
+        login,
+        name: shown_name(raw_name),
+        avatar_url: shown_avatar(raw_avatar),
     }
+}
+
+fn shown_name(value: &str) -> String {
+    let name = value.trim();
+    if name.is_empty() || name.len() > 128 || hidden_char(name) {
+        String::new()
+    } else {
+        name.to_owned()
+    }
+}
+
+fn shown_avatar(value: &str) -> String {
+    if value.is_empty()
+        || value.len() > 512
+        || value.chars().any(char::is_whitespace)
+        || hidden_char(value)
+    {
+        return String::new();
+    }
+    let Ok(url) = reqwest::Url::parse(value) else {
+        return String::new();
+    };
+    if url.scheme() != "https"
+        || url.host_str() != Some("avatars.githubusercontent.com")
+        || url.port_or_known_default() != Some(443)
+        || !url.username().is_empty()
+        || url.password().is_some()
+        || url.path().len() < 2
+    {
+        return String::new();
+    }
+    value.to_owned()
+}
+
+fn hidden_char(value: &str) -> bool {
+    value.chars().any(|ch| {
+        let code = ch as u32;
+        code <= 0x1f
+            || code == 0x7f
+            || (0x202a..=0x202e).contains(&code)
+            || (0x2066..=0x2069).contains(&code)
+    })
 }
 
 fn fields(body: &str) -> Option<serde_json::Map<String, serde_json::Value>> {
@@ -1347,6 +1448,83 @@ mod tests {
         assert!(after.user_code.is_empty());
         assert!(broken.snapshot().is_none());
         assert!(broken.secrets.load().unwrap().is_none());
+    }
+
+    #[test]
+    fn a_saved_login_loads_the_public_profile_and_drops_a_foreign_avatar() {
+        let secrets = MemorySecrets::new();
+        secrets
+            .save(&Account {
+                token: TOKEN.to_owned(),
+                login: "octocat".to_owned(),
+            })
+            .unwrap();
+        let session = Session::new(secrets, CLIENT);
+        let view = session
+            .profile(|method, url, body, token| {
+                assert_eq!(method, "GET");
+                assert_eq!(url, USER_URL);
+                assert!(body.is_empty());
+                assert_eq!(token, Some(TOKEN));
+                token_json(
+                    r#"{"login":"octocat","name":" Mona Lisa ","avatar_url":"https://avatars.githubusercontent.com/u/1?v=4"}"#,
+                )
+            })
+            .unwrap();
+        assert!(view.connected);
+        assert_eq!(view.login, "octocat");
+        assert_eq!(view.name, "Mona Lisa");
+        assert_eq!(
+            view.avatar_url,
+            "https://avatars.githubusercontent.com/u/1?v=4"
+        );
+        let saved = session.secrets.load().unwrap().unwrap();
+        assert_eq!(saved.login, "octocat");
+        assert_eq!(saved.token, TOKEN);
+
+        for avatar in [
+            "https://evil.test/a.png",
+            "http://avatars.githubusercontent.com/u/1",
+            "https://avatars.githubusercontent.com.evil.test/u/1",
+            "https://user:pw@avatars.githubusercontent.com/u/1",
+            "https://github.com/identicons/octocat.png",
+        ] {
+            let body = format!(r#"{{"login":"octocat","name":"ok","avatar_url":"{avatar}"}}"#);
+            let hostile = session
+                .profile(|_, _, _, _| token_json(&body))
+                .unwrap();
+            assert!(hostile.avatar_url.is_empty(), "{avatar}");
+            assert_eq!(hostile.name, "ok");
+            assert!(hostile.connected);
+        }
+
+        let broken_name = session
+            .profile(|_, _, _, _| token_json(r#"{"login":"octocat","name":"a\nb","avatar_url":"https://avatars.githubusercontent.com/u/1"}"#))
+            .unwrap();
+        assert!(broken_name.name.is_empty());
+        assert_eq!(
+            broken_name.avatar_url,
+            "https://avatars.githubusercontent.com/u/1"
+        );
+
+        let offline = session
+            .profile(|_, _, _, _| Err(LoginError::NotRun))
+            .unwrap();
+        assert!(offline.connected);
+        assert_eq!(offline.login, "octocat");
+        assert!(offline.name.is_empty());
+        assert!(offline.avatar_url.is_empty());
+
+        let logged_out = Session::new(MemorySecrets::new(), CLIENT);
+        let mut calls = 0;
+        let empty = logged_out
+            .profile(|_, _, _, _| {
+                calls += 1;
+                Err(LoginError::NotRun)
+            })
+            .unwrap();
+        assert!(!empty.connected);
+        assert_eq!(calls, 0);
     }
 
     #[test]

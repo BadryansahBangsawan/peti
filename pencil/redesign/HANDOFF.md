@@ -20,6 +20,25 @@ The editable source is [untitled.pen](../untitled.pen). Open it with pen.dev; th
 | 10 interaction states | L0SL9 | [PNG](../exports/L0SL9.png) |
 | 6 download/fork outcomes | zHYy1 | [PNG](../exports/zHYy1.png) |
 
+### Added continuation pages
+
+| Surface | Node | Export |
+|---|---|---|
+| Download detail, stages and destination | D3dVe | [PNG](../exports/D3dVe.png) |
+| Downloads completed tab | u6DMbQ | [PNG](../exports/u6DMbQ.png) |
+| Downloads failed tab and recovery | hfcso | [PNG](../exports/hfcso.png) |
+| Filtered search with language menu | xwyzo | [PNG](../exports/xwyzo.png) |
+| Home first use, without account | M84aN | [PNG](../exports/M84aN.png) |
+| Library empty, without account | g4UYA | [PNG](../exports/g4UYA.png) |
+| Settings without GitHub account | NsvLt | [PNG](../exports/NsvLt.png) |
+| Fork created and download queued | l7d71C | [PNG](../exports/l7d71C.png) |
+| Home dark | s4kpSi | [PNG](../exports/s4kpSi.png) |
+| Discover dark | zKMk8 | [PNG](../exports/zKMk8.png) |
+| Library dark | P7Z8yY | [PNG](../exports/P7Z8yY.png) |
+| Settings dark | gPMnS | [PNG](../exports/gPMnS.png) |
+
+The canvas now contains 22 app screens/variants and three reference boards. The new pages start at canvas y=3980: detail/completed/failed/filtered search in the first row, first-use/Library empty/guest Settings/fork result at y=5100, and the four dark pages at y=6220. The prior screens and boards retain their positions. The PDF includes all 25 frames.
+
 Main screens are 1440 × 1000; compact is 1100 × 800. The system board sits above the screens. Each root is clipped and labelled; reusable controls/states remain editable. Theme variables support light and dark.
 
 ## Interaction intent
@@ -27,6 +46,8 @@ Main screens are 1440 × 1000; compact is 1100 × 800. The system board sits abo
 1. Home paste → Add repo validation and destination → Downloads → Library/open folder.
 2. Discover search/filter → details or checkbox selection → shared queue → Library.
 3. Settings → GitHub device flow → explicit action choice → fork identity and/or local folder result.
+
+The continuation adds full-page examples for transfer inspection, completion and recovery. The fork result deliberately shows a created fork with a waiting download, rather than claiming the local folder is already ready. The first-use and empty-Library screens show guest identity and zero unfinished downloads; guest Settings keeps the existing queue intact and selects the system theme. Dark Settings selects the dark theme. The open language menu sits above result rows; close it before selecting a covered result.
 
 Actions, focus/disabled specimens and result states are visual specifications. The canvas is not a functional prototype, and no app controls were wired or deployed.
 

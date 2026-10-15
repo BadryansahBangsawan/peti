@@ -155,6 +155,10 @@ pub fn pause(store: &Store, id: i64) -> Result<(), String> {
     store.pause_item(id).map_err(|err| err.to_string())
 }
 
+pub fn dismiss(store: &Store, id: i64) -> Result<(), String> {
+    store.dismiss_item(id).map_err(|err| err.to_string())
+}
+
 pub fn cancel(store: &Store, id: i64) -> Result<(), String> {
     let item = store.get(id).map_err(|err| err.to_string())?;
     if item.status == Status::Selesai {
@@ -881,6 +885,37 @@ mod tests {
         assert_eq!(std::fs::read(finished.join("README")).unwrap(), b"stay");
         assert_eq!(store.get(done.id).unwrap().status, Status::Selesai);
         let _ = std::fs::remove_dir_all(&parent);
+    }
+
+    #[test]
+    fn dismiss_removes_only_a_cancelled_row() {
+        let store = Store::open(&temp_db()).unwrap();
+        let cancelled = store
+            .insert_queue("octocat", "Hello-World", "", "/tmp/peti-dismiss")
+            .unwrap();
+        store.cancel_item(cancelled.id).unwrap();
+        store
+            .insert_history(
+                "octocat",
+                "Kept",
+                "",
+                "/tmp/peti-dismiss/kept",
+                "2026-10-15 12:00:00 UTC",
+            )
+            .unwrap();
+        dismiss(&store, cancelled.id).unwrap();
+        assert!(store.get(cancelled.id).is_err());
+        assert_eq!(store.history().unwrap().len(), 1);
+
+        let waiting = store
+            .insert_queue("octocat", "Other", "", "/tmp/peti-dismiss")
+            .unwrap();
+        let err = dismiss(&store, waiting.id).unwrap_err();
+        assert_eq!(err, "hapus hanya untuk yang dibatalkan");
+        assert_eq!(store.get(waiting.id).unwrap().status, Status::Menunggu);
+
+        let missing = dismiss(&store, 999_999).unwrap_err();
+        assert_eq!(missing, "item antrean tidak ada");
     }
 
     #[test]

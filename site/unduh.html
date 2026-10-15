@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Unduh Peti</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="download-page">
+    <div class="page" data-release>
+      <header class="nav">
+        <a class="brand" href="index.html">
+          <svg class="mark" viewBox="28 28 200 200" aria-hidden="true">
+            <path fill="#F2F3F5" fill-rule="evenodd" d="M88 44h80a44 44 0 0 1 44 44v80a44 44 0 0 1-44 44h-80a44 44 0 0 1-44-44v-80a44 44 0 0 1 44-44z m16 0v52a24 24 0 0 0 48 0v-52z"/>
+          </svg>
+          <span class="wordmark">peti</span>
+        </a>
+        <nav class="nav-links" id="site-nav" aria-label="Utama">
+          <a href="index.html#fitur">Fitur</a>
+          <a href="index.html#cara-kerja">Cara kerja</a>
+          <a class="current" href="#perangkat">Unduhan</a>
+          <a class="github" href="https://github.com/BadryansahBangsawan/peti">
+            <svg class="icon" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+              <path d="M9 18c-4.51 2-5-2-7-2"/>
+            </svg>
+            GitHub
+          </a>
+          <a class="btn menu-cta" href="#perangkat">
+            Unduh Peti
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14"/>
+              <path d="m19 12-7 7-7-7"/>
+            </svg>
+          </a>
+        </nav>
+        <button class="menu" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Buka menu">
+          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6h16"/>
+            <path d="M4 12h16"/>
+            <path d="M4 18h16"/>
+          </svg>
+        </button>
+        <a class="btn nav-cta" href="#perangkat">
+          Unduh Peti
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14"/>
+            <path d="m19 12-7 7-7-7"/>
+          </svg>
+        </a>
+      </header>
+
+      <main>
+        <section class="lead" aria-labelledby="lead-title">
+          <h1 id="lead-title">Ruang baru untuk<br>repo pilihanmu.</h1>
+        </section>
+
+        <section class="installer" id="perangkat" aria-labelledby="installer-title">
+          <div class="installer-head">
+            <h2 id="installer-title">Pilih perangkatmu.</h2>
+            <div class="installer-links">
+              <p class="release-version" hidden></p>
+              <a class="release-notes" href="https://github.com/BadryansahBangsawan/peti/releases">
+                Catatan rilis
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 17 17 7"/>
+                  <path d="M7 7h10v10"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <div class="card-row">
+            <article class="card card-mac">
+              <div class="card-head">
+                <svg class="icon" width="32" height="32" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z"/>
+                  <path d="M20.054 15.987H3.946"/>
+                </svg>
+                <span class="fmt">.dmg</span>
+              </div>
+              <h3>macOS</h3>
+              <div class="arches" role="group" aria-label="Arsitektur macOS">
+                <button class="arch is-on" type="button" aria-pressed="true" data-ext=".dmg" data-arch="arm" data-fmt=".dmg">
+                  Apple Silicon
+                  <svg class="icon dot" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <svg class="icon ring" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                </button>
+                <button class="arch" type="button" aria-pressed="false" data-ext=".dmg" data-arch="x64" data-fmt=".dmg">
+                  Intel
+                  <svg class="icon dot" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <svg class="icon ring" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                </button>
+              </div>
+              <a class="get" data-ext=".dmg" data-arch="arm">
+                Unduh untuk macOS
+                <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 15V3"/>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <path d="m7 10 5 5 5-5"/>
+                </svg>
+              </a>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <svg class="icon" width="32" height="32" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect width="20" height="14" x="2" y="3" rx="2"/>
+                  <path d="M8 21h8"/>
+                  <path d="M12 17v4"/>
+                </svg>
+                <span class="fmt">.exe</span>
+              </div>
+              <h3>Windows</h3>
+              <div class="arches" role="group" aria-label="Arsitektur Windows">
+                <button class="arch is-on" type="button" aria-pressed="true" data-ext=".exe" data-arch="x64" data-fmt=".exe">
+                  x64
+                  <svg class="icon dot" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <svg class="icon ring" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                </button>
+                <button class="arch" type="button" aria-pressed="false" data-ext=".exe" data-arch="arm" data-fmt=".exe">
+                  ARM64
+                  <svg class="icon dot" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <svg class="icon ring" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                </button>
+              </div>
+              <a class="get" data-ext=".exe" data-arch="x64">
+                Unduh untuk Windows
+                <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 15V3"/>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <path d="m7 10 5 5 5-5"/>
+                </svg>
+              </a>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <svg class="icon" width="32" height="32" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m4 17 6-6-6-6"/>
+                  <path d="M12 19h8"/>
+                </svg>
+                <span class="fmt">.AppImage</span>
+              </div>
+              <h3>Linux</h3>
+              <div class="arches" role="group" aria-label="Paket Linux">
+                <button class="arch is-on" type="button" aria-pressed="true" data-ext=".appimage" data-arch="any" data-fmt=".AppImage">
+                  AppImage
+                  <svg class="icon dot" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <svg class="icon ring" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                </button>
+                <button class="arch" type="button" aria-pressed="false" data-ext=".deb" data-arch="any" data-fmt=".deb">
+                  Debian (.deb)
+                  <svg class="icon dot" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <svg class="icon ring" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                </button>
+              </div>
+              <a class="get" data-ext=".appimage" data-arch="any">
+                Unduh untuk Linux
+                <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 15V3"/>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <path d="m7 10 5 5 5-5"/>
+                </svg>
+              </a>
+            </article>
+          </div>
+
+          <a class="guide-link" href="#panduan">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+            Panduan instalasi
+          </a>
+        </section>
+
+        <section class="guide" id="panduan" aria-labelledby="guide-title">
+          <div class="guide-head">
+            <h2 id="guide-title">Pasang sekali.<br>Mulai eksplorasi.</h2>
+            <div class="tabs" role="tablist" aria-label="Platform instalasi">
+              <button class="tab is-on" type="button" role="tab" aria-selected="true" data-os="mac">macOS</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-os="win">Windows</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-os="linux">Linux</button>
+            </div>
+          </div>
+          <div class="install-steps">
+            <article class="install-step">
+              <span>01</span>
+              <h3>Buka installer</h3>
+            </article>
+            <article class="install-step">
+              <span>02</span>
+              <h3>Pindahkan Peti</h3>
+            </article>
+            <article class="install-step">
+              <span>03</span>
+              <h3>Mulai dengan tautan</h3>
+            </article>
+          </div>
+          <div class="guide-help">
+            <a class="repo-help" href="https://github.com/BadryansahBangsawan/peti">
+              Bantuan di GitHub
+              <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 17 17 7"/>
+                <path d="M7 7h10v10"/>
+              </svg>
+            </a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="footer-top">
+          <a class="brand" href="index.html">
+            <svg class="mark" viewBox="28 28 200 200" aria-hidden="true">
+              <path fill="#F2F3F5" fill-rule="evenodd" d="M88 44h80a44 44 0 0 1 44 44v80a44 44 0 0 1-44 44h-80a44 44 0 0 1-44-44v-80a44 44 0 0 1 44-44z m16 0v52a24 24 0 0 0 48 0v-52z"/>
+            </svg>
+            <span class="wordmark">peti</span>
+          </a>
+          <div class="footer-cols">
+            <nav aria-label="Produk">
+              <p class="footer-label">Produk</p>
+              <a href="index.html#fitur">Fitur</a>
+              <a href="#perangkat">Unduhan</a>
+              <a href="https://github.com/BadryansahBangsawan/peti/releases">Catatan rilis</a>
+            </nav>
+            <nav aria-label="Bantuan">
+              <p class="footer-label">Bantuan</p>
+              <a href="#panduan">Panduan instalasi</a>
+              <a href="index.html#faq">Pertanyaan umum</a>
+              <a href="https://github.com/BadryansahBangsawan/peti">GitHub</a>
+            </nav>
+          </div>
+        </div>
+        <div class="footer-base">
+          <p>© 2026 Peti</p>
+        </div>
+      </footer>
+    </div>
+    <script src="nav.js"></script>
+    <script type="module" src="release.js"></script>
+  </body>
+</html>
