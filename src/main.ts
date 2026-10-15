@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import {
   applySearchResult,
   cardKey,
@@ -40,12 +41,14 @@ import { pages, type PageId } from "./pages.ts";
 import {
   formatRate,
   formatSize,
+  nextSpeed,
   percentOf,
   readQueue,
   rowMessage,
   statusLabel,
   transferLine,
   type QueueRow,
+  type SpeedSample,
 } from "./queue.ts";
 import { applyTheme, parseSavedTheme, type Theme } from "./theme.ts";
 
@@ -145,9 +148,6 @@ toolbar.append(railButton, crumbSlash, crumbSection, crumbChevron, crumbPage);
 const title = document.createElement("h1");
 title.className = "page-title";
 
-const lede = document.createElement("p");
-lede.className = "lede";
-
 const empty = document.createElement("p");
 empty.className = "empty";
 
@@ -159,25 +159,12 @@ const discoverFilters = document.createElement("form");
 discoverFilters.className = "discover-page";
 discoverFilters.hidden = true;
 
-function field(labelText: string, control: HTMLElement): HTMLLabelElement {
-  const label = document.createElement("label");
-  const name = document.createElement("span");
-  name.textContent = labelText;
-  label.append(name, control);
-  return label;
-}
-
 const searchInput = document.createElement("input");
 searchInput.type = "search";
 searchInput.autocomplete = "off";
 
-const languageInput = document.createElement("input");
-languageInput.type = "text";
-languageInput.autocomplete = "off";
-
-const topicInput = document.createElement("input");
-topicInput.type = "text";
-topicInput.autocomplete = "off";
+const languageSelect = document.createElement("select");
+const topicSelect = document.createElement("select");
 
 const periodSelect = document.createElement("select");
 for (const option of [
@@ -220,15 +207,30 @@ searchClear.addEventListener("click", () => {
 });
 discoverSearch.append(searchGlyph, searchInput, searchClear);
 
-function filterField(input: HTMLInputElement, placeholder: string): HTMLLabelElement {
+function filterSelect(
+  select: HTMLSelectElement,
+  label: string,
+  empty: string,
+  options: { value: string; label: string }[],
+): HTMLLabelElement {
   const wrap = document.createElement("label");
   wrap.className = "filter-field";
-  input.placeholder = placeholder;
-  input.setAttribute("aria-label", placeholder);
+  select.setAttribute("aria-label", label);
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = empty;
+  select.append(blank);
+  for (const option of options) {
+    const item = document.createElement("option");
+    item.value = option.value;
+    item.textContent = option.label;
+    select.append(item);
+  }
+  select.value = "";
   const chevron = document.createElement("span");
   chevron.className = "filter-chevron";
   chevron.innerHTML = svg(chevronDownIcon, 16);
-  wrap.append(input, chevron);
+  wrap.append(select, chevron);
   return wrap;
 }
 
@@ -256,8 +258,51 @@ for (const option of [
 }
 periodSelect.hidden = true;
 filterRow.append(
-  filterField(languageInput, "Semua bahasa"),
-  filterField(topicInput, "Semua topik"),
+  filterSelect(
+    languageSelect,
+    "Bahasa",
+    "Semua bahasa",
+    [
+      "TypeScript",
+      "JavaScript",
+      "Python",
+      "Go",
+      "Rust",
+      "Java",
+      "C",
+      "C++",
+      "C#",
+      "Ruby",
+      "PHP",
+      "Swift",
+      "Kotlin",
+      "Dart",
+      "HTML",
+      "CSS",
+      "Shell",
+      "Vue",
+      "Scala",
+      "Elixir",
+    ].map((name) => ({ value: name, label: name })),
+  ),
+  filterSelect(topicSelect, "Topik", "Semua topik", [
+    { value: "web", label: "Web" },
+    { value: "cli", label: "CLI" },
+    { value: "api", label: "API" },
+    { value: "react", label: "React" },
+    { value: "vue", label: "Vue" },
+    { value: "android", label: "Android" },
+    { value: "ios", label: "iOS" },
+    { value: "docker", label: "Docker" },
+    { value: "linux", label: "Linux" },
+    { value: "database", label: "Database" },
+    { value: "machine-learning", label: "Machine learning" },
+    { value: "devops", label: "DevOps" },
+    { value: "security", label: "Security" },
+    { value: "game", label: "Game" },
+    { value: "bot", label: "Bot" },
+    { value: "library", label: "Library" },
+  ]),
   periodBar,
   periodSelect,
 );
@@ -284,13 +329,11 @@ resultHead.append(resultTitle, resultCount, resultCriteria, resultFresh);
 const activeFilters = document.createElement("div");
 activeFilters.className = "active-filters";
 activeFilters.hidden = true;
-const activeChips = document.createElement("div");
-activeChips.className = "active-chips";
 const resetFilters = document.createElement("button");
 resetFilters.type = "button";
 resetFilters.className = "reset-filters";
 resetFilters.textContent = "Reset filter";
-activeFilters.append(activeChips, resetFilters);
+activeFilters.append(resetFilters);
 const filterNote = document.createElement("p");
 filterNote.className = "filter-note";
 filterNote.hidden = true;
@@ -302,48 +345,25 @@ filterNote.append(filterNoteText);
 function discoverFiltered(): boolean {
   return (
     searchInput.value.trim().length > 0 ||
-    languageInput.value.trim().length > 0 ||
-    topicInput.value.trim().length > 0 ||
+    languageSelect.value.trim().length > 0 ||
+    topicSelect.value.trim().length > 0 ||
     periodQuery(periodSelect.value) !== "week"
   );
 }
 
-function filterChip(text: string): HTMLSpanElement {
-  const chip = document.createElement("span");
-  chip.className = "filter-chip";
-  chip.textContent = text;
-  return chip;
-}
-
 function paintDiscoverFilters(): void {
-  const language = languageInput.value.trim();
-  const topic = topicInput.value.trim();
-  const period = periodQuery(periodSelect.value);
   const filtered = discoverFiltered();
   const hasResults = discoverCards.length > 0;
   searchClear.hidden = searchInput.value.length === 0;
-  activeChips.replaceChildren();
-  if (language.length > 0) {
-    activeChips.append(filterChip(language));
-  }
-  if (topic.length > 0) {
-    activeChips.append(filterChip(topic));
-  }
-  if (period !== "week") {
-    const label = periodButtons.get(period)?.textContent ?? "";
-    if (label.length > 0) {
-      activeChips.append(filterChip(label));
-    }
-  }
   resetFilters.hidden = !filtered || !hasResults;
-  activeFilters.hidden = activeChips.childElementCount === 0 && resetFilters.hidden;
+  activeFilters.hidden = resetFilters.hidden;
   filterNote.hidden = !filtered || !hasResults || currentId() !== "discover" || detailCard !== null;
 }
 
 function resetDiscoverFilters(): void {
   searchInput.value = "";
-  languageInput.value = "";
-  topicInput.value = "";
+  languageSelect.value = "";
+  topicSelect.value = "";
   periodSelect.value = "week";
   paintPeriod();
   paintDiscoverFilters();
@@ -449,18 +469,6 @@ addSelected.className = "bulk-add";
 addSelected.textContent = "Tambah ke antrean";
 selectionBar.append(bulkIcon, selectionCount, clearSelected, addSelected);
 
-const folderAsk = document.createElement("form");
-folderAsk.className = "folder-ask";
-folderAsk.hidden = true;
-const folderInput = document.createElement("input");
-folderInput.type = "text";
-folderInput.autocomplete = "off";
-const folderButton = document.createElement("button");
-folderButton.type = "submit";
-folderButton.className = "open";
-folderButton.textContent = "Pakai folder ini";
-folderAsk.append(field("Folder unduhan", folderInput), folderButton);
-
 const detail = document.createElement("section");
 detail.className = "detail";
 detail.hidden = true;
@@ -489,19 +497,17 @@ let discoverNotice: DiscoverNotice = "none";
 const selected = new Map<string, DiscoverCard>();
 let detailCard: DiscoverCard | null = null;
 let pendingQueue: DiscoverCard[] = [];
-let pendingFork: { card: DiscoverCard; action: "fork" | "fork-download" } | null = null;
 let forkNote = "";
 let forkResult: { action: Exclude<TakeAction, "download">; view: TakeView } | null = null;
+type DetailChoice = TakeAction | "queue";
+let detailChoice: DetailChoice = "download";
 let addOpen = false;
 let downloadDetailId: number | null = null;
 let latestSpeeds = new Map<number, number>();
 let addAction: TakeAction = "download";
 let addAccepted: number | null = null;
 let addReviewed = "";
-let awaitingFolder = false;
-let pasteWaiting = false;
-let pasteText = "";
-let choosingFolder = false;
+let folderDialog: Promise<string | null> | null = null;
 let downloadFolder = "";
 let downloadConcurrency = 3;
 let homeHistoryCount: number | null = null;
@@ -721,10 +727,7 @@ queueFootPath.hidden = true;
 queueFootPath.append(document.createRange().createContextualFragment(svg(downloadIcon, 14)));
 const queueFootPathText = document.createElement("span");
 queueFootPath.append(queueFootPathText);
-const queueFootCap = document.createElement("span");
-queueFootCap.className = "queue-foot-cap";
-queueFootCap.textContent = "Maks. 3 unduhan bersamaan";
-queueFoot.append(queueFootPath, queueFootCap);
+queueFoot.append(queueFootPath);
 
 const downloadDetail = document.createElement("section");
 downloadDetail.className = "download-detail";
@@ -785,10 +788,7 @@ addFolderChange.type = "button";
 addFolderChange.className = "folder-change";
 addFolderChange.textContent = "Ganti";
 addFolderChange.addEventListener("click", () => {
-  choosingFolder = true;
-  folderInput.value = downloadFolder;
-  showFolderAsk();
-  folderInput.focus();
+  void chooseFolder();
 });
 addSave.append(addSaveLabel, addFolderIcon, addFolderPath, addFolderChange);
 const addReview = document.createElement("aside");
@@ -888,10 +888,7 @@ composerChange.type = "button";
 composerChange.className = "folder-change";
 composerChange.textContent = "Ganti";
 composerChange.addEventListener("click", () => {
-  choosingFolder = true;
-  folderInput.value = downloadFolder;
-  showFolderAsk();
-  folderInput.focus();
+  void chooseFolder();
 });
 const composerSpacer = document.createElement("span");
 composerSpacer.className = "composer-spacer";
@@ -1000,10 +997,7 @@ changeFolder.type = "button";
 changeFolder.className = "folder-change";
 changeFolder.textContent = "Ganti folder";
 changeFolder.addEventListener("click", () => {
-  choosingFolder = true;
-  folderInput.value = downloadFolder;
-  showFolderAsk();
-  folderInput.focus();
+  void chooseFolder();
 });
 const firstSpacer = document.createElement("span");
 firstSpacer.className = "first-spacer";
@@ -1131,11 +1125,11 @@ function paintDownloadFolder(path: string): void {
   destinationPath.textContent = path;
   settingsFolderPath.textContent = path;
   queueFootPathText.textContent = path;
-  queueFootPath.hidden = path.trim().length === 0;
-  const cap = downloadConcurrency >= 1 && downloadConcurrency <= 8 ? downloadConcurrency : 3;
-  queueFootCap.textContent = `Maks. ${cap} unduhan bersamaan`;
-  if (document.activeElement !== folderField) {
-    folderField.value = path;
+  queueFootPath.hidden = !folderKnown;
+  if (!folderKnown) {
+    queueFoot.hidden = true;
+  } else if (currentId() === "downloads" && queueTab !== "gagal") {
+    queueFoot.hidden = false;
   }
 }
 
@@ -1143,7 +1137,6 @@ const historyList = document.createElement("ul");
 historyList.className = "history";
 historyList.hidden = true;
 
-const libraryEmptyLede = "Semua repo yang selesai diunduh akan muncul di sini.";
 const libraryEmpty = document.createElement("section");
 libraryEmpty.className = "library-empty";
 libraryEmpty.hidden = true;
@@ -1400,24 +1393,11 @@ for (const item of themes) {
 
 const pageIntro = document.createElement("div");
 pageIntro.className = "page-intro";
-pageIntro.append(title, lede);
+pageIntro.append(title);
 const pageHead = document.createElement("div");
 pageHead.className = "page-head";
 pageHead.append(pageIntro, addRepo);
 
-const folderField = document.createElement("input");
-folderField.type = "text";
-folderField.autocomplete = "off";
-folderField.spellcheck = false;
-folderField.setAttribute("aria-label", "Folder unduhan");
-const concurrencyField = document.createElement("input");
-concurrencyField.type = "number";
-concurrencyField.min = "1";
-concurrencyField.max = "8";
-concurrencyField.step = "1";
-concurrencyField.value = "3";
-concurrencyField.hidden = true;
-concurrencyField.setAttribute("aria-label", "Unduhan bersamaan");
 const clientField = document.createElement("input");
 clientField.type = "text";
 clientField.autocomplete = "off";
@@ -1426,16 +1406,14 @@ clientField.setAttribute("aria-label", "Client id GitHub");
 const settingsNote = document.createElement("p");
 settingsNote.className = "settings-note";
 
-function settingsBlock(titleText: string, description: string): HTMLElement {
+function settingsBlock(titleText: string): HTMLElement {
   const section = document.createElement("section");
   section.className = "settings-block";
   const head = document.createElement("div");
   head.className = "settings-head";
   const heading = document.createElement("h2");
   heading.textContent = titleText;
-  const text = document.createElement("p");
-  text.textContent = description;
-  head.append(heading, text);
+  head.append(heading);
   section.append(head);
   return section;
 }
@@ -1444,10 +1422,7 @@ const settingsPage = document.createElement("div");
 settingsPage.className = "settings-page";
 settingsPage.hidden = true;
 
-const folderSection = settingsBlock(
-  "Folder unduhan",
-  "Repo baru disimpan di folder ini. Lokasi unduhan sebelumnya tetap sama.",
-);
+const folderSection = settingsBlock("Folder unduhan");
 const settingsFolderRow = document.createElement("div");
 settingsFolderRow.className = "settings-folder";
 const settingsFolderIcon = document.createElement("span");
@@ -1463,59 +1438,15 @@ const settingsFolderLabel = document.createElement("span");
 settingsFolderLabel.textContent = "Ganti folder";
 settingsFolderButton.append(settingsFolderLabel);
 settingsFolderButton.addEventListener("click", () => {
-  choosingFolder = true;
-  folderInput.value = downloadFolder;
-  showFolderAsk();
-  folderInput.focus();
+  void chooseFolder();
 });
 settingsFolderRow.append(settingsFolderIcon, settingsFolderPath, settingsFolderButton);
 folderSection.append(settingsFolderRow);
 
-const concurrencySection = settingsBlock(
-  "Unduhan bersamaan",
-  "Batasi jumlah repo yang diunduh pada waktu yang sama.",
-);
-const concurrencyRow = document.createElement("div");
-concurrencyRow.className = "settings-concurrency";
-const concurrencyLabel = document.createElement("span");
-concurrencyLabel.className = "settings-concurrency-label";
-concurrencyLabel.textContent = "Jumlah unduhan";
-const concurrencySpacer = document.createElement("span");
-concurrencySpacer.className = "grow";
-const settingsCount = document.createElement("span");
-settingsCount.className = "settings-count";
-settingsCount.textContent = "3";
-function stepButton(label: string, delta: number): HTMLButtonElement {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "line-btn";
-  button.textContent = label;
-  button.addEventListener("click", () => {
-    const current = Number(concurrencyField.value || downloadConcurrency);
-    const next = current + delta;
-    if (!Number.isInteger(next) || next < 1 || next > 8) {
-      return;
-    }
-    concurrencyField.value = String(next);
-    settingsCount.textContent = concurrencyField.value;
-    saveDownloadSettings();
-  });
-  return button;
-}
-concurrencyRow.append(concurrencyLabel, concurrencySpacer, stepButton("−", -1), settingsCount, stepButton("+", 1));
-const concurrencyLimit = document.createElement("span");
-concurrencyLimit.className = "settings-limit";
-concurrencyLimit.textContent = "1–8 repo";
-concurrencyRow.append(concurrencyField, concurrencyLimit);
-concurrencySection.append(concurrencyRow);
-
-const themeSection = settingsBlock("Tampilan", "Pilih tema yang nyaman untuk ruang kerjamu.");
+const themeSection = settingsBlock("Tampilan");
 themeSection.append(themeBlock);
 
-const githubSection = settingsBlock(
-  "GitHub",
-  "Opsional untuk mengunduh repo publik. Hubungkan akun untuk membuat fork.",
-);
+const githubSection = settingsBlock("GitHub");
 githubSection.append(githubBlock);
 
 const clientRow = document.createElement("section");
@@ -1550,10 +1481,7 @@ const deviceHead = document.createElement("div");
 deviceHead.className = "device-flow-head";
 const deviceTitle = document.createElement("h2");
 deviceTitle.textContent = "Hubungkan akun GitHub";
-const deviceLede = document.createElement("p");
-deviceLede.className = "device-flow-lede";
-deviceLede.textContent = "Buat fork dari Peti. Unduhan repo publik tetap bisa tanpa masuk.";
-deviceHead.append(deviceTitle, deviceLede);
+deviceHead.append(deviceTitle);
 const deviceBody = document.createElement("div");
 deviceBody.className = "device-flow-body";
 const deviceMain = document.createElement("div");
@@ -1664,18 +1592,7 @@ function paintDeviceFlow(): void {
   }
 }
 
-settingsPage.append(
-  deviceFlow,
-  folderSection,
-  concurrencySection,
-  themeSection,
-  githubSection,
-  clientRow,
-  settingsNote,
-  settingsFoot,
-);
-folderField.addEventListener("change", saveDownloadSettings);
-concurrencyField.addEventListener("change", saveDownloadSettings);
+settingsPage.append(deviceFlow, folderSection, themeSection, githubSection, clientRow, settingsNote, settingsFoot);
 clientField.addEventListener("change", saveClientId);
 
 function paintClientRow(): void {
@@ -1691,7 +1608,6 @@ content.append(
   home,
   downloads,
   discoverFilters,
-  folderAsk,
   detail,
   empty,
   action,
@@ -1801,15 +1717,19 @@ function forkPlace(slug: string): { folder: string; ref: string; waiting: boolea
   if (!parts) {
     return { folder: "", ref: "", waiting: false };
   }
-  const same = (owner: string, repo: string): boolean => owner === parts.owner && repo === parts.repo;
-  const queued = queueRows.find((row) => same(row.owner, row.repo));
-  const saved = doneRows.find((row) => same(row.owner, row.repo));
-  const ref = queued?.gitRef.trim() || saved?.gitRef.trim() || "";
-  const folder = saved?.folder.trim() ?? "";
+  const queued = queueRows.find(
+    (row) =>
+      row.owner === parts.owner &&
+      row.repo === parts.repo &&
+      (row.status === "menunggu" || row.status === "berjalan"),
+  );
+  if (!queued) {
+    return { folder: "", ref: "", waiting: false };
+  }
   return {
-    folder,
-    ref,
-    waiting: queued?.status === "menunggu" && (folder.length > 0 || ref.length > 0),
+    folder: "",
+    ref: queued.gitRef.trim(),
+    waiting: queued.status === "menunggu",
   };
 }
 
@@ -1829,14 +1749,13 @@ function renderForkResult(
     forkResult = null;
     forkNote = "";
     renderDetail();
-    showFolderAsk();
   });
   detail.append(back);
   if (view.queued || result.action === "fork") {
     const intro = document.createElement("div");
     intro.className = "detail-intro";
     const heading = document.createElement("h2");
-    heading.textContent = "Fork berhasil. Unduhan siap dimulai.";
+    heading.textContent = view.queued ? "Fork berhasil. Unduhan siap dimulai." : "Fork berhasil.";
     const desc = document.createElement("p");
     desc.className = "desc";
     const actionLabel = result.action === "fork" ? "Hanya fork" : "Fork, lalu unduh";
@@ -1904,24 +1823,19 @@ function renderForkResult(
     });
     return button;
   };
-  if (href || !view.queued) {
+  if (href) {
     const actions = document.createElement("div");
     actions.className = "fork-actions";
-    if (href) {
-      const open = document.createElement("a");
-      open.className = "line-btn fork-open";
-      open.href = href;
-      open.rel = "noreferrer";
-      open.target = "_blank";
-      open.append(document.createRange().createContextualFragment(svg(arrowUpRightIcon, 16)));
-      const openLabel = document.createElement("span");
-      openLabel.textContent = "Buka fork di GitHub";
-      open.append(openLabel);
-      actions.append(open);
-    }
-    if (!view.queued) {
-      actions.append(seeDownloads());
-    }
+    const open = document.createElement("a");
+    open.className = "line-btn fork-open";
+    open.href = href;
+    open.rel = "noreferrer";
+    open.target = "_blank";
+    open.append(document.createRange().createContextualFragment(svg(arrowUpRightIcon, 16)));
+    const openLabel = document.createElement("span");
+    openLabel.textContent = "Buka fork di GitHub";
+    open.append(openLabel);
+    actions.append(open);
     facts.append(actions);
   }
   columns.append(facts);
@@ -2001,12 +1915,9 @@ function renderDetail(): void {
     detailCard = null;
     forkNote = "";
     forkResult = null;
-    pendingFork = null;
-    if (pendingQueue.length === 0) {
-      awaitingFolder = false;
-    }
+    detailChoice = "download";
     renderDetail();
-    showFolderAsk();
+    renderDiscover(discoverCards, discoverNotice);
   });
   const intro = document.createElement("div");
   intro.className = "detail-intro";
@@ -2076,27 +1987,30 @@ function renderDetail(): void {
   const choices = document.createElement("div");
   choices.className = "choices";
   const connected = githubView?.connected === true;
-  const takes = detailTakes(connected);
-  const hints: Record<string, string> = {
+  if (connected) {
+    if (detailChoice === "queue") {
+      detailChoice = "download";
+    }
+  } else if (detailChoice === "fork" || detailChoice === "fork-download") {
+    detailChoice = "download";
+  }
+  const hints: Record<DetailChoice, string> = {
     download: "Simpan ke perangkat",
+    queue: "Masukkan ke antrean unduhan",
     fork: "Salin ke akun GitHub",
     "fork-download": "Unduh hasil fork milikmu",
   };
-  takes.forEach((take, index) => {
-    choices.append(
-      choiceRow(take.label, hints[take.id] ?? "", index === 0, () => {
-        if (take.id === "download") {
-          void queueCards([card], false);
-          return;
-        }
-        void runTake(card, take.id, "");
-      }),
-    );
-  });
+  const rows: { id: DetailChoice; label: string }[] = detailTakes(connected).map((take) => ({
+    id: take.id,
+    label: take.label,
+  }));
   if (!connected) {
+    rows.push({ id: "queue", label: "Tambah ke antrean" });
+  }
+  for (const row of rows) {
     choices.append(
-      choiceRow("Tambah ke antrean", "Masukkan ke antrean unduhan", false, () => {
-        void queueCards([card], false);
+      choiceRow(row.label, hints[row.id], detailChoice === row.id, () => {
+        chooseDetailAction(card, row.id);
       }),
     );
   }
@@ -2139,7 +2053,6 @@ async function runTake(
     if (!stillThisCard(card)) {
       return;
     }
-    pendingFork = null;
     forkResult = null;
     forkNote = FORK_FAILED;
     renderDetail();
@@ -2150,26 +2063,20 @@ async function runTake(
   }
   const body = readTake(loaded);
   if (!body) {
-    pendingFork = null;
     forkResult = null;
     forkNote = FORK_FAILED;
     renderDetail();
     return;
   }
   if (body.needFolder) {
-    pendingFork = { card, action };
-    awaitingFolder = true;
-    forkResult = null;
-    forkNote = "";
-    showFolderAsk();
-    renderDetail();
+    if (folder.trim().length > 0) {
+      return;
+    }
+    const path = await chooseFolder();
+    if (path) {
+      await runTake(card, action, path);
+    }
     return;
-  }
-  pendingFork = null;
-  if (body.queued && pendingQueue.length === 0) {
-    awaitingFolder = false;
-    folderInput.value = "";
-    showFolderAsk();
   }
   if (forkReady(body)) {
     forkResult = { action, view: body };
@@ -2181,12 +2088,58 @@ async function runTake(
   renderDetail();
 }
 
-function showFolderAsk(): void {
-  const page = currentId();
-  const discoverAsk = page === "discover" && awaitingFolder;
-  const pasteAsk = pasteWaiting && (page === "downloads" || page === "home");
-  const folderOnly = choosingFolder && (page === "home" || page === "downloads" || page === "settings");
-  folderAsk.hidden = !discoverAsk && !pasteAsk && !folderOnly;
+async function chooseFolder(): Promise<string | null> {
+  if (folderDialog) {
+    return null;
+  }
+  const current = downloadFolder.trim();
+  const pending = (async (): Promise<string | null> => {
+    let picked: string | string[] | null = null;
+    try {
+      picked = await open({
+        directory: true,
+        multiple: false,
+        title: "Folder unduhan",
+        ...(current.length > 0 ? { defaultPath: current } : {}),
+      });
+    } catch {
+      return null;
+    }
+    if (typeof picked !== "string") {
+      return null;
+    }
+    const folder = picked.trim();
+    if (folder.length === 0) {
+      return null;
+    }
+    const concurrency =
+      Number.isInteger(downloadConcurrency) && downloadConcurrency >= 1 && downloadConcurrency <= 8
+        ? downloadConcurrency
+        : 3;
+    try {
+      await invoke("set_download_settings", { folder, concurrency });
+    } catch (err: unknown) {
+      const message = typeof err === "string" ? err : "";
+      if (currentId() === "settings") {
+        settingsNote.textContent = message;
+      } else {
+        paintPasteNote(message);
+      }
+      return null;
+    }
+    downloadConcurrency = concurrency;
+    paintDownloadFolder(folder);
+    if (currentId() === "settings") {
+      settingsNote.textContent = "";
+    }
+    return folder;
+  })();
+  folderDialog = pending;
+  try {
+    return await pending;
+  } finally {
+    folderDialog = null;
+  }
 }
 
 function paintPasteNote(text: string): void {
@@ -2236,14 +2189,16 @@ async function submitPaste(paste: string, folder: string): Promise<void> {
     return;
   }
   if (body.needFolder) {
-    pasteText = text;
-    pasteWaiting = true;
-    showFolderAsk();
+    if (folder.trim().length > 0) {
+      return;
+    }
+    const path = await chooseFolder();
+    if (!path) {
+      return;
+    }
+    await submitPaste(text, path);
     return;
   }
-  pasteWaiting = false;
-  pasteText = "";
-  folderInput.value = "";
   if (pasteInput.value.trim() === text) {
     pasteInput.value = "";
   }
@@ -2253,12 +2208,11 @@ async function submitPaste(paste: string, folder: string): Promise<void> {
   if (firstInput.value.trim() === text) {
     firstInput.value = "";
   }
-  showFolderAsk();
   paintPasteNote(body.rejected.join("\n"));
   refreshVisibleQueue();
 }
 
-const samples = new Map<number, { bytes: number; at: number }>();
+const samples = new Map<number, SpeedSample>();
 let queueTicket = 0;
 let queuePoll: ReturnType<typeof setTimeout> | undefined;
 
@@ -2309,12 +2263,14 @@ function refreshVisibleQueue(): void {
       }
       if (now === "home") {
         renderHomeStrip(rows);
+      }
+      if (now === "home" || now === "downloads") {
         void invoke("history_rows")
           .then((history) => {
-            if (ticket !== queueTicket || currentId() !== "home") {
+            if (ticket !== queueTicket || currentId() !== now) {
               return;
             }
-            renderHistory("home", readHistory(history));
+            renderHistory(now, readHistory(history));
           })
           .catch(() => undefined);
       }
@@ -2345,18 +2301,13 @@ function runQueue(command: string, id: number): void {
 }
 
 function rowSpeed(row: QueueRow, now: number): number | null {
-  if (row.status !== "berjalan") {
-    if (row.status !== "dijeda") {
-      samples.delete(row.id);
-    }
-    return null;
+  const next = nextSpeed(row.status, row.bytes, now, samples.get(row.id));
+  if (next.sample) {
+    samples.set(row.id, next.sample);
+  } else {
+    samples.delete(row.id);
   }
-  const prev = samples.get(row.id);
-  samples.set(row.id, { bytes: row.bytes, at: now });
-  if (!prev || now <= prev.at || row.bytes <= prev.bytes) {
-    return null;
-  }
-  return (row.bytes - prev.bytes) / ((now - prev.at) / 1000);
+  return next.speed;
 }
 
 let settingsTicket = 0;
@@ -2400,36 +2351,12 @@ function loadAppSettings(): void {
       if (currentId() !== "settings") {
         return;
       }
-      if (document.activeElement !== folderField) {
-        folderField.value = body.defaultFolder;
-      }
-      if (document.activeElement !== concurrencyField) {
-        concurrencyField.value = String(body.concurrency);
-        settingsCount.textContent = concurrencyField.value;
-      }
       if (document.activeElement !== clientField) {
         clientField.value = body.githubClientId;
       }
       paintClientRow();
     })
     .catch(() => undefined);
-}
-
-function saveDownloadSettings(): void {
-  const concurrency = Number(concurrencyField.value);
-  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 8) {
-    settingsNote.textContent = "jumlah bersamaan di luar 1 sampai 8";
-    return;
-  }
-  settingsNote.textContent = "";
-  void invoke("set_download_settings", { folder: folderField.value, concurrency })
-    .then(() => {
-      downloadConcurrency = concurrency;
-      paintDownloadFolder(folderField.value.trim());
-    })
-    .catch((err: unknown) => {
-      settingsNote.textContent = typeof err === "string" ? err : "";
-    });
 }
 
 function saveClientId(): void {
@@ -2452,20 +2379,21 @@ function rememberPending(cards: readonly DiscoverCard[]): void {
   pendingQueue = [...merged.values()];
 }
 
-async function sendQueue(cards: DiscoverCard[], sendFolder: boolean): Promise<void> {
+type QueueSend = { queued: number } | { needFolder: true } | { failed: true };
+
+async function sendQueue(cards: DiscoverCard[], chosen: string | null): Promise<QueueSend> {
   if (cards.length === 0) {
-    return;
+    return { queued: 0 };
   }
-  if (awaitingFolder && !sendFolder) {
+  if (folderDialog && chosen === null) {
     rememberPending(cards);
-    showFolderAsk();
-    return;
+    return { needFolder: true };
   }
-  if (sendFolder) {
+  if (chosen !== null) {
     rememberPending(cards);
     cards = pendingQueue;
   }
-  const folder = sendFolder ? folderInput.value : "";
+  const folder = chosen ?? downloadFolder.trim();
   let loaded: unknown;
   try {
     loaded = await invoke("queue_discovered", {
@@ -2473,38 +2401,72 @@ async function sendQueue(cards: DiscoverCard[], sendFolder: boolean): Promise<vo
       folder,
     });
   } catch {
-    return;
+    return { failed: true };
   }
   const body = readQueueDiscover(loaded);
   if (!body) {
-    return;
+    return { failed: true };
   }
   if (body.needFolder) {
     rememberPending(cards);
-    awaitingFolder = true;
-    showFolderAsk();
-    return;
+    if (chosen !== null) {
+      return { needFolder: true };
+    }
+    const saved = await chooseFolder();
+    if (!saved) {
+      return { needFolder: true };
+    }
+    return sendQueue(pendingQueue, saved);
   }
-  awaitingFolder = false;
   pendingQueue = [];
-  folderInput.value = "";
-  showFolderAsk();
   for (const card of cards) {
     selected.delete(cardKey(card));
   }
   renderSelection();
-  if (currentId() === "discover") {
+  if (currentId() === "discover" && detailCard === null) {
     renderDiscover(discoverCards, discoverNotice);
   }
+  return { queued: body.queued };
 }
 
-function queueCards(cards: DiscoverCard[], sendFolder: boolean): Promise<void> {
-  const run = queueTail.then(() => sendQueue(cards, sendFolder));
+function queueCards(cards: DiscoverCard[], chosen: string | null = null): Promise<QueueSend> {
+  const run = queueTail.then(() => sendQueue(cards, chosen));
   queueTail = run.then(
     () => undefined,
     () => undefined,
   );
   return run;
+}
+
+function chooseDetailAction(card: DiscoverCard, choice: DetailChoice): void {
+  detailChoice = choice;
+  forkNote = "";
+  renderDetail();
+  if (choice === "fork" || choice === "fork-download") {
+    void runTake(card, choice, "");
+    return;
+  }
+  void queueCards([card]).then((outcome) => {
+    if (!stillThisCard(card) || detailChoice !== choice) {
+      return;
+    }
+    if ("queued" in outcome) {
+      if (choice === "download") {
+        detailCard = null;
+        detailChoice = "download";
+        forkNote = "";
+        show("downloads");
+        return;
+      }
+      forkNote = outcome.queued > 0 ? "Masuk antrean unduhan." : "Repo ini sudah ada di antrean.";
+      renderDetail();
+      return;
+    }
+    if ("failed" in outcome) {
+      forkNote = "Tidak bisa masuk antrean.";
+      renderDetail();
+    }
+  });
 }
 
 function renderDiscover(cards: DiscoverCard[], kind: DiscoverNotice): void {
@@ -2536,13 +2498,9 @@ function renderDiscover(cards: DiscoverCard[], kind: DiscoverNotice): void {
     name.addEventListener("click", () => {
       forkNote = "";
       forkResult = null;
-      pendingFork = null;
-      if (pendingQueue.length === 0) {
-        awaitingFolder = false;
-      }
+      detailChoice = "download";
       detailCard = card;
       renderDetail();
-      showFolderAsk();
     });
     const info = document.createElement("div");
     info.className = "repo-info";
@@ -2566,7 +2524,7 @@ function renderDiscover(cards: DiscoverCard[], kind: DiscoverNotice): void {
     info.append(name, desc, meta);
     const download = quietAction(downloadIcon, "Unduh");
     download.addEventListener("click", () => {
-      void queueCards([card], false);
+      void queueCards([card]);
     });
     item.append(box, info, download);
     discoverList.append(item);
@@ -2619,8 +2577,8 @@ function scheduleDiscover(immediate: boolean): void {
   const start = () => {
     discoverTimer = undefined;
     const text = searchInput.value;
-    const language = languageInput.value;
-    const topic = topicInput.value;
+    const language = languageSelect.value;
+    const topic = topicSelect.value;
     const period = periodQuery(periodSelect.value);
     void invoke("discover_search", { text, language, topic, period })
       .then((loaded) => {
@@ -2734,6 +2692,7 @@ function failQueueRow(row: QueueRow): HTMLLIElement {
     runQueue("queue_retry", row.id);
   });
   actions.append(button);
+  item.dataset.key = queueRowKey(row);
   item.append(body, status, actions);
   return item;
 }
@@ -2850,7 +2809,7 @@ function rememberAddReview(text: string, queued: number, reasons: readonly strin
   paintAddReview(queued, reasons);
 }
 
-async function submitAdd(): Promise<void> {
+async function submitAdd(asked = false): Promise<void> {
   const text = addLinks.value.trim();
   if (text.length === 0 || currentId() !== "downloads") {
     return;
@@ -2869,10 +2828,15 @@ async function submitAdd(): Promise<void> {
       return;
     }
     if (body.needFolder) {
-      pasteText = text;
-      pasteWaiting = true;
-      showFolderAsk();
-      folderInput.focus();
+      if (asked) {
+        rememberAddReview(addLinks.value, 0, body.rejected);
+        return;
+      }
+      const path = await chooseFolder();
+      if (!path) {
+        return;
+      }
+      await submitAdd(true);
       return;
     }
     rememberAddReview(addLinks.value, body.queued, body.rejected);
@@ -2901,10 +2865,16 @@ async function submitAdd(): Promise<void> {
       continue;
     }
     if (body.needFolder) {
-      choosingFolder = true;
-      showFolderAsk();
-      folderInput.focus();
-      rememberAddReview(addLinks.value, accepted, reasons);
+      if (asked) {
+        reasons.push(FORK_FAILED);
+        continue;
+      }
+      const path = await chooseFolder();
+      if (!path) {
+        rememberAddReview(addLinks.value, accepted, reasons);
+        return;
+      }
+      await submitAdd(true);
       return;
     }
     if (body.ownRepo) {
@@ -2915,7 +2885,11 @@ async function submitAdd(): Promise<void> {
       reasons.push(FORK_FAILED);
       continue;
     }
-    accepted += 1;
+    if (body.queued) {
+      accepted += 1;
+      continue;
+    }
+    reasons.push(`${body.forked} dibuat`);
   }
   rememberAddReview(addLinks.value, accepted, reasons);
   if (addAction === "fork-download") {
@@ -2942,37 +2916,9 @@ function openDownloadDetail(id: number): void {
   renderQueue(queueRows);
 }
 
-function paintDownloadDetail(row: QueueRow): void {
-  downloadDetail.replaceChildren();
-  const back = document.createElement("button");
-  back.type = "button";
-  back.className = "back";
-  back.append(document.createRange().createContextualFragment(svg(arrowLeftIcon, 15)));
-  const backLabel = document.createElement("span");
-  backLabel.textContent = "Kembali ke Downloads";
-  back.append(backLabel);
-  back.addEventListener("click", () => {
-    downloadDetailId = null;
-    renderQueue(queueRows);
-  });
-  const heading = document.createElement("h2");
-  heading.textContent = `${row.owner} / ${row.repo}`;
-  const intro = document.createElement("p");
-  intro.className = "lede";
-  intro.textContent = "Detail unduhan, lokasi penyimpanan, dan progres saat ini.";
-  const progress = document.createElement("div");
-  progress.className = "download-progress";
-  const status = document.createElement("span");
-  status.className = "status-chip";
-  if (row.status === "berjalan" || row.status === "gagal" || row.status === "selesai") {
-    status.classList.add(`is-${row.status}`);
-  }
-  status.textContent = statusLabel(row.status);
-  progress.append(status);
+function downloadFigures(row: QueueRow): string {
   const percent = percentOf(row.bytes, row.total);
   const speed = latestSpeeds.get(row.id) ?? null;
-  const figures = document.createElement("p");
-  figures.className = "download-figures";
   const figureParts: string[] = [];
   if (percent !== null) {
     figureParts.push(`${percent}%`);
@@ -2989,8 +2935,48 @@ function paintDownloadDetail(row: QueueRow): void {
       figureParts.push(`sisa ${seconds} detik`);
     }
   }
-  figures.textContent = figureParts.join("  ·  ");
-  if (figureParts.length > 0) {
+  return figureParts.join("  ·  ");
+}
+
+function paintDownloadDetail(row: QueueRow): void {
+  const key = `${row.id}\t${row.status}\t${row.error}`;
+  const text = downloadFigures(row);
+  const existing = downloadDetail.querySelector(".download-figures");
+  if (downloadDetail.dataset.key === key && (text.length === 0) === !existing) {
+    if (existing) {
+      existing.textContent = text;
+    }
+    downloadDetail.hidden = false;
+    return;
+  }
+  downloadDetail.dataset.key = key;
+  downloadDetail.replaceChildren();
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "back";
+  back.append(document.createRange().createContextualFragment(svg(arrowLeftIcon, 15)));
+  const backLabel = document.createElement("span");
+  backLabel.textContent = "Kembali ke Downloads";
+  back.append(backLabel);
+  back.addEventListener("click", () => {
+    downloadDetailId = null;
+    renderQueue(queueRows);
+  });
+  const heading = document.createElement("h2");
+  heading.textContent = `${row.owner} / ${row.repo}`;
+  const progress = document.createElement("div");
+  progress.className = "download-progress";
+  const status = document.createElement("span");
+  status.className = "status-chip";
+  if (row.status === "berjalan" || row.status === "gagal" || row.status === "selesai") {
+    status.classList.add(`is-${row.status}`);
+  }
+  status.textContent = statusLabel(row.status);
+  progress.append(status);
+  const figures = document.createElement("p");
+  figures.className = "download-figures";
+  figures.textContent = text;
+  if (text.length > 0) {
     progress.append(figures);
   }
   const message = rowMessage(row);
@@ -3062,7 +3048,7 @@ function paintDownloadDetail(row: QueueRow): void {
   const workspace = document.createElement("div");
   workspace.className = "download-workspace";
   workspace.append(progress, facts);
-  downloadDetail.append(back, heading, intro, workspace, stages);
+  downloadDetail.append(back, heading, workspace, stages);
   downloadDetail.hidden = false;
 }
 
@@ -3093,7 +3079,6 @@ function applyDownloadsOverlay(): boolean {
     pageHead.hidden = false;
     addRepo.hidden = true;
     title.textContent = "Tambah repo";
-    lede.textContent = "Satu tautan atau banyak sekaligus. Kamu yang memilih tindakannya.";
     addFolderPath.textContent = downloadFolder;
     paintAddChoices();
     paintAddButton();
@@ -3117,6 +3102,46 @@ function applyDownloadsOverlay(): boolean {
   addRepo.hidden = true;
   paintDownloadDetail(row);
   return true;
+}
+
+function queueRowKey(row: QueueRow): string {
+  return `${row.id}\t${row.status}\t${row.gitRef}`;
+}
+
+function paintQueueProgress(item: HTMLElement, row: QueueRow): void {
+  const note = item.querySelector(".repo-body > .error");
+  if (note) {
+    note.textContent = transferLine({
+      status: row.status,
+      bytes: row.bytes,
+      total: row.total,
+      speed: latestSpeeds.get(row.id) ?? null,
+      error: rowMessage(row),
+    });
+  }
+  const body = item.querySelector(".repo-body");
+  if (!(body instanceof HTMLElement)) {
+    return;
+  }
+  const percent = percentOf(row.bytes, row.total);
+  const show = percent !== null && (row.status === "berjalan" || row.status === "dijeda");
+  const track = body.querySelector(":scope > .track");
+  if (!show) {
+    track?.remove();
+    return;
+  }
+  const fill = track?.firstElementChild;
+  if (track && fill instanceof HTMLElement) {
+    fill.style.width = `${percent}%`;
+    return;
+  }
+  track?.remove();
+  const created = document.createElement("span");
+  created.className = "track";
+  const bar = document.createElement("span");
+  bar.style.width = `${percent}%`;
+  created.append(bar);
+  body.append(created);
 }
 
 function renderQueue(rows: QueueRow[]): void {
@@ -3179,14 +3204,6 @@ function renderQueue(rows: QueueRow[]): void {
   const noRows = rows.length === 0;
   const showDone = queueTab === "selesai" && doneRows.length > 0;
   const failAttention = queueTab === "gagal" && counts.gagal > 0;
-  if (currentId() === "downloads") {
-    const page = pages.find((item) => item.id === "downloads");
-    lede.textContent = queueTab === "selesai"
-      ? "Repo yang sudah selesai diunduh dan diekstrak."
-      : failAttention
-        ? "Perbaiki item yang gagal. Unduhan lain tetap berjalan."
-        : page?.lede ?? "";
-  }
   queueEmpty.hidden = showDone || !noRows;
   const pasteOpen = failAttention && document.activeElement === pasteInput;
   pasteForm.hidden = showDone || (failAttention && !pasteOpen);
@@ -3203,27 +3220,48 @@ function renderQueue(rows: QueueRow[]): void {
   if (othersRunning) {
     failRunning.textContent = `${counts.berjalan} unduhan lain masih berjalan`;
   }
-  queueFoot.hidden = failAttention;
+  queueFoot.hidden = failAttention || downloadFolder.trim().length === 0;
   paintHeadingAction(failAttention);
   paintDone(showDone);
   const shown = queueTab === "semua" ? rows : rows.filter((row) => row.status === queueTab);
-  if (showDone) {
+  if (showDone || shown.length === 0) {
     queueList.replaceChildren();
     queueList.hidden = true;
     return;
   }
-  queueList.replaceChildren();
-  if (shown.length === 0) {
-    queueList.hidden = true;
+  const running = rows.filter((row) => row.status === "berjalan");
+  let rateSum = 0;
+  let rateCount = 0;
+  for (const row of running) {
+    const speed = latestSpeeds.get(row.id);
+    if (speed !== undefined) {
+      rateSum += speed;
+      rateCount += 1;
+    }
+  }
+  transferSpeed.hidden = rateCount === 0;
+  if (rateCount > 0) {
+    transferRate.textContent = formatRate(rateSum);
+  }
+  const keys = shown.map((row) => queueRowKey(row));
+  const current = [...queueList.children];
+  const sameShape =
+    current.length === shown.length &&
+    current.every((node, index) => node instanceof HTMLElement && node.dataset.key === keys[index]);
+  if (sameShape) {
+    if (queueTab !== "gagal") {
+      for (let index = 0; index < shown.length; index += 1) {
+        const node = current[index];
+        const row = shown[index];
+        if (node instanceof HTMLElement && row) {
+          paintQueueProgress(node, row);
+        }
+      }
+    }
+    queueList.hidden = false;
     return;
   }
-  const running = rows.filter((row) => row.status === "berjalan");
-  const rateKnown = running.length > 0 && running.every((row) => latestSpeeds.has(row.id));
-  transferSpeed.hidden = !rateKnown;
-  if (rateKnown) {
-    const sum = running.reduce((total, row) => total + (latestSpeeds.get(row.id) ?? 0), 0);
-    transferRate.textContent = formatRate(sum);
-  }
+  queueList.replaceChildren();
   for (const row of shown) {
     if (queueTab === "gagal") {
       queueList.append(failQueueRow(row));
@@ -3322,6 +3360,7 @@ function renderQueue(rows: QueueRow[]): void {
     } else {
       actions.append(rowIconButton(pauseIcon, "Jeda"), rowIconButton(cancelIcon, "Batal"));
     }
+    item.dataset.key = queueRowKey(row);
     item.append(tile, body, status, actions);
     queueList.append(item);
   }
@@ -3367,13 +3406,11 @@ function applyHomeMode(): void {
   home.classList.toggle("is-first", first);
   if (first) {
     title.textContent = "Selamat datang di Peti.";
-    lede.textContent = "Bawa repo GitHub ke perangkatmu. Mulai tanpa perlu masuk akun.";
     return;
   }
   const page = pages.find((item) => item.id === "home");
   if (page) {
     title.textContent = page.title;
-    lede.textContent = page.lede;
   }
 }
 
@@ -3474,7 +3511,6 @@ function renderHistory(id: PageId, rows: HistoryRow[]): void {
     historyList.hidden = true;
     if (id === "library") {
       libraryEmpty.hidden = false;
-      lede.textContent = libraryEmptyLede;
       empty.hidden = true;
       action.hidden = true;
     }
@@ -3482,10 +3518,6 @@ function renderHistory(id: PageId, rows: HistoryRow[]): void {
   }
   if (id === "library") {
     libraryEmpty.hidden = true;
-    const page = pages.find((item) => item.id === "library");
-    if (page) {
-      lede.textContent = page.lede;
-    }
     empty.hidden = true;
     action.hidden = true;
   }
@@ -3534,7 +3566,6 @@ function show(id: PageId): void {
     history.replaceState(null, "", `#${id}`);
   }
   title.textContent = page.title;
-  lede.textContent = page.lede;
   crumbSection.textContent = page.section;
   crumbPage.textContent = page.label;
   empty.textContent = page.empty;
@@ -3555,9 +3586,6 @@ function show(id: PageId): void {
   empty.hidden = isSettings || isDiscover || isDownloads || isHome || isLibrary;
   action.hidden = isSettings || isDiscover || isDownloads || isHome || isLibrary;
   libraryEmpty.hidden = !isLibrary;
-  if (isLibrary) {
-    lede.textContent = libraryEmptyLede;
-  }
   addRepo.hidden = !isDownloads;
   downloads.hidden = !isDownloads;
   home.hidden = !isHome;
@@ -3592,7 +3620,6 @@ function show(id: PageId): void {
   if (isDiscover) {
     renderSelection();
     renderDetail();
-    showFolderAsk();
     renderDiscover(discoverCards, discoverNotice);
     scheduleDiscover(true);
   }
@@ -3620,7 +3647,6 @@ function show(id: PageId): void {
         renderHistory(id, []);
       });
   }
-  showFolderAsk();
   paintPasteNote(pasteNote.textContent ?? "");
   paintDeviceFlow();
   for (const [pageId, button] of buttons) {
@@ -3739,8 +3765,8 @@ function onDiscoverFilter(): void {
 }
 
 searchInput.addEventListener("input", onDiscoverFilter);
-languageInput.addEventListener("input", onDiscoverFilter);
-topicInput.addEventListener("input", onDiscoverFilter);
+languageSelect.addEventListener("change", onDiscoverFilter);
+topicSelect.addEventListener("change", onDiscoverFilter);
 periodSelect.addEventListener("change", onDiscoverFilter);
 discoverFilters.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -3750,7 +3776,7 @@ discoverFilters.addEventListener("submit", (event) => {
 });
 
 addSelected.addEventListener("click", () => {
-  void queueCards([...selected.values()], false);
+  void queueCards([...selected.values()]);
 });
 
 clearSelected.addEventListener("click", () => {
@@ -3796,49 +3822,6 @@ githubButton.addEventListener("click", () => {
       }
       applyGithubError(err, !leaving);
     });
-});
-
-folderAsk.addEventListener("submit", (event) => {
-  event.preventDefault();
-  if (pasteWaiting && (currentId() === "home" || currentId() === "downloads")) {
-    void submitPaste(pasteText, folderInput.value);
-    return;
-  }
-  if (pendingFork) {
-    const pending = pendingFork;
-    void runTake(pending.card, pending.action, folderInput.value);
-    return;
-  }
-  if (choosingFolder && pendingQueue.length === 0) {
-    const folder = folderInput.value.trim();
-    const concurrency = downloadConcurrency >= 1 && downloadConcurrency <= 8 ? downloadConcurrency : 3;
-    choosingFolder = false;
-    void invoke("set_download_settings", { folder, concurrency })
-      .then(() => {
-        downloadConcurrency = concurrency;
-        paintDownloadFolder(folder);
-        folderInput.value = "";
-        if (document.activeElement !== folderField) {
-          folderField.value = folder;
-        }
-        showFolderAsk();
-      })
-      .catch((err: unknown) => {
-        choosingFolder = true;
-        const message = typeof err === "string" ? err : "";
-        if (currentId() === "settings") {
-          settingsNote.textContent = message;
-        } else {
-          paintPasteNote(message);
-        }
-        showFolderAsk();
-      });
-    return;
-  }
-  if (pendingQueue.length === 0) {
-    return;
-  }
-  void queueCards(pendingQueue, true);
 });
 
 window.addEventListener("hashchange", () => show(currentId()));
