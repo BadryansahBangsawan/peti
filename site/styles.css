@@ -626,7 +626,7 @@ figure {
   color: var(--web-ink);
 }
 
-.card-mac {
+.card.is-on {
   background: #e5efde;
   box-shadow: inset 0 0 0 1px #99bc85;
 }
@@ -668,6 +668,11 @@ figure {
   font-size: 14px;
   font-weight: 400;
   line-height: 18px;
+  outline: none;
+}
+
+.arch:focus-visible {
+  box-shadow: inset 0 0 0 2px #38633b;
 }
 
 .arch.is-on {
@@ -704,7 +709,7 @@ figure {
   text-decoration: none;
 }
 
-.card-mac .get {
+.card.is-on .get {
   background: var(--web-ink);
   color: #fff;
 }

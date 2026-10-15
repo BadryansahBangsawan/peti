@@ -58,9 +58,17 @@ function boot() {
     });
   });
 
+  const selectCard = (card) => {
+    page.querySelectorAll(".card").forEach((item) => {
+      item.classList.toggle("is-on", item === card);
+    });
+  };
+
   page.querySelectorAll(".card").forEach((card) => {
+    card.addEventListener("click", () => selectCard(card));
     card.querySelectorAll(".arch").forEach((button) => {
       button.addEventListener("click", () => {
+        selectCard(card);
         card.querySelectorAll(".arch").forEach((item) => {
           const on = item === button;
           item.classList.toggle("is-on", on);
