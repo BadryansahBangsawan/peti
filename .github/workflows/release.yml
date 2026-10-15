@@ -4,12 +4,25 @@ on:
   push:
     tags: ["v*"]
 
-permissions:
-  contents: write
-
 jobs:
   release:
-    runs-on: macos-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin --bundles dmg"
+          - platform: macos-15-intel
+            args: "--target x86_64-apple-darwin --bundles dmg"
+          - platform: ubuntu-22.04
+            args: "--bundles deb,appimage"
+          - platform: windows-latest
+            args: "--bundles nsis"
+          - platform: windows-11-arm
+            args: "--target aarch64-pc-windows-msvc --bundles nsis"
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,56 +30,31 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || matrix.platform == 'macos-15-intel' && 'x86_64-apple-darwin' || matrix.platform == 'windows-11-arm' && 'aarch64-pc-windows-msvc' || '' }}
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+      - name: Linux packages
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
       - run: npm ci
-      - name: Build
-        run: npm run tauri build
+      - uses: tauri-apps/tauri-action@v1
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-      - name: Zip and upload
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -eu
-          APP=$(ls -d src-tauri/target/release/bundle/macos/*.app)
-          BASE=$(basename "$APP")
-          ditto -c -k --keepParent "$APP" "$BASE.zip"
-          DMG=$(ls src-tauri/target/release/bundle/dmg/*.dmg)
-          TAG="$GITHUB_REF_NAME"
-          BUNDLE="src-tauri/target/release/bundle"
-          ARCHIVES=$(find "$BUNDLE" -type f -name '*.app.tar.gz' | sort)
-          SIGS=$(find "$BUNDLE" -type f -name '*.sig' | sort)
-          if [ -z "$ARCHIVES" ]; then
-            echo "updater archive was not created" >&2
-            exit 1
-          fi
-          if [ -z "$SIGS" ]; then
-            echo "updater signature was not created" >&2
-            exit 1
-          fi
-          MANIFEST=$(find "$BUNDLE" -type f -name 'latest.json' | sort | head -n 1)
-          if [ -z "$MANIFEST" ]; then
-            ARCHIVE=$(printf '%s\n' "$ARCHIVES" | grep -E 'aarch64|arm64' | head -n 1 || true)
-            if [ -z "$ARCHIVE" ]; then
-              ARCHIVE=$(printf '%s\n' "$ARCHIVES" | head -n 1)
-            fi
-            SIG="$ARCHIVE.sig"
-            if [ ! -f "$SIG" ]; then
-              echo "updater signature was not created" >&2
-              exit 1
-            fi
-            MANIFEST="${RUNNER_TEMP:-/tmp}/latest.json"
-            export TAG ARCHIVE SIG MANIFEST
-            export VERSION="${TAG#v}"
-            python3 -c 'import json, os, pathlib, urllib.parse; tag=os.environ["TAG"]; archive=os.environ["ARCHIVE"]; signature=pathlib.Path(os.environ["SIG"]).read_text().rstrip("\r\n"); filename=os.path.basename(archive); url="https://github.com/BadryansahBangsawan/peti/releases/download/%s/%s" % (tag, urllib.parse.quote(filename)); body={"version": os.environ["VERSION"], "platforms": {"darwin-aarch64": {"signature": signature, "url": url}}}; pathlib.Path(os.environ["MANIFEST"]).write_text(json.dumps(body, indent=2) + "\n")'
-          fi
-          ARGS=("$BASE.zip" "$DMG")
-          while IFS= read -r file; do
-            if [ -n "$file" ]; then
-              ARGS+=("$file")
-            fi
-          done < <(printf '%s\n' "$ARCHIVES"; printf '%s\n' "$SIGS"; printf '%s\n' "$MANIFEST")
-          gh release upload "$TAG" "${ARGS[@]}" --clobber || gh release create "$TAG" "${ARGS[@]}" --title "${TAG#v}" --generate-notes
+        with:
+          tauriScript: npx tauri
+          args: ${{ matrix.args }}
+          tagName: v__VERSION__
+          releaseName: Peti v__VERSION__
+          releaseBody: |
+            Installer untuk macOS (Apple Silicon dan Intel), Windows (x64 dan ARM64), dan Linux (AppImage dan Debian).
+            Berkas macOS belum dinotariskan Apple.
+          releaseDraft: false
+          prerelease: false
+          updaterJsonPreferNsis: true
+          retryAttempts: 2
