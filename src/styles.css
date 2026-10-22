@@ -1263,6 +1263,29 @@ body,
   line-height: 21px;
 }
 
+.settings-input {
+  min-height: 41px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  outline: none;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.settings-input::placeholder {
+  color: var(--muted);
+}
+
+.settings-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
 .settings-folder,
 .settings-github {
   display: flex;

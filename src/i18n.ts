@@ -219,6 +219,8 @@ export type Messages = {
   themeDark: string;
   language: string;
   githubTitle: string;
+  clientIdTitle: string;
+  clientIdHint: string;
   tagline: string;
   version: string;
   notConnected: string;
@@ -454,6 +456,8 @@ export const id: Messages = {
   themeDark: "Gelap",
   language: "Bahasa",
   githubTitle: "GitHub",
+  clientIdTitle: "Client ID GitHub",
+  clientIdHint: "Tempel Client ID OAuth App GitHub yang memakai Device Flow. Client secret tidak diperlukan.",
   tagline: "Dibuat untuk repo, disimpan di perangkatmu.",
   version: "Peti 0.1.0",
   notConnected: "Belum terhubung",
@@ -689,6 +693,8 @@ export const en: Messages = {
   themeDark: "Dark",
   language: "Language",
   githubTitle: "GitHub",
+  clientIdTitle: "GitHub client ID",
+  clientIdHint: "Paste the client ID of a GitHub OAuth App that uses Device Flow. No client secret is needed.",
   tagline: "Built for repos, kept on your device.",
   version: "Peti 0.1.0",
   notConnected: "Not connected",
@@ -924,6 +930,8 @@ const hi: Messages = {
   themeDark: "गहरा",
   language: "भाषा",
   githubTitle: "GitHub",
+  clientIdTitle: "GitHub क्लाइंट आईडी",
+  clientIdHint: "Device Flow वाले GitHub OAuth App का क्लाइंट आईडी पेस्ट करें। क्लाइंट सीक्रेट की ज़रूरत नहीं।",
   tagline: "repo के लिए बना, आपके डिवाइस पर रखा।",
   version: "Peti 0.1.0",
   notConnected: "जुड़ा नहीं",
@@ -1159,6 +1167,8 @@ const zh: Messages = {
   themeDark: "深色",
   language: "语言",
   githubTitle: "GitHub",
+  clientIdTitle: "GitHub 客户端 ID",
+  clientIdHint: "粘贴使用 Device Flow 的 GitHub OAuth App 客户端 ID。不需要客户端密钥。",
   tagline: "为 repo 而生，保存在你的设备上。",
   version: "Peti 0.1.0",
   notConnected: "未连接",
@@ -1394,6 +1404,8 @@ const pt: Messages = {
   themeDark: "Escuro",
   language: "Idioma",
   githubTitle: "GitHub",
+  clientIdTitle: "ID de cliente do GitHub",
+  clientIdHint: "Cole o ID de cliente de um OAuth App do GitHub que usa Device Flow. Não é necessário client secret.",
   tagline: "Feito para repos, guardado no seu dispositivo.",
   version: "Peti 0.1.0",
   notConnected: "Não conectado",
@@ -1629,6 +1641,8 @@ const ja: Messages = {
   themeDark: "ダーク",
   language: "言語",
   githubTitle: "GitHub",
+  clientIdTitle: "GitHub クライアント ID",
+  clientIdHint: "Device Flow を使う GitHub OAuth App のクライアント ID を貼り付けてください。クライアントシークレットは不要です。",
   tagline: "repo のために作り、このデバイスに保存します。",
   version: "Peti 0.1.0",
   notConnected: "未接続",
@@ -1864,6 +1878,8 @@ const de: Messages = {
   themeDark: "Dunkel",
   language: "Sprache",
   githubTitle: "GitHub",
+  clientIdTitle: "GitHub-Client-ID",
+  clientIdHint: "Füge die Client-ID einer GitHub-OAuth-App ein, die den Device Flow verwendet. Ein Client-Secret wird nicht benötigt.",
   tagline: "Für Repos gemacht, auf deinem Gerät gespeichert.",
   version: "Peti 0.1.0",
   notConnected: "Nicht verbunden",
@@ -2099,6 +2115,8 @@ const ru: Messages = {
   themeDark: "Тёмная",
   language: "Язык",
   githubTitle: "GitHub",
+  clientIdTitle: "ID клиента GitHub",
+  clientIdHint: "Вставьте ID клиента GitHub OAuth App, использующего Device Flow. Client secret не нужен.",
   tagline: "Сделано для репозиториев, хранится на вашем устройстве.",
   version: "Peti 0.1.0",
   notConnected: "Не подключено",
@@ -2334,6 +2352,8 @@ const fr: Messages = {
   themeDark: "Sombre",
   language: "Langue",
   githubTitle: "GitHub",
+  clientIdTitle: "ID client GitHub",
+  clientIdHint: "Collez l'ID client d'une OAuth App GitHub qui utilise le Device Flow. Aucun client secret n'est nécessaire.",
   tagline: "Fait pour les dépôts, enregistré sur votre appareil.",
   version: "Peti 0.1.0",
   notConnected: "Non connecté",

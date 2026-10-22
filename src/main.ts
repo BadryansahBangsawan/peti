@@ -593,6 +593,10 @@ function paintChrome(): void {
   uiLanguage.setAttribute("aria-label", copy.language);
   const githubHead = githubSection.querySelector("h2");
   if (githubHead) githubHead.textContent = copy.githubTitle;
+  const clientHead = clientRow.querySelector("h2");
+  if (clientHead) clientHead.textContent = copy.clientIdTitle;
+  clientField.setAttribute("aria-label", copy.clientIdTitle);
+  clientHint.textContent = copy.clientIdHint;
   settingsLocal.textContent = copy.tagline;
   settingsVersion.textContent = appVersion.length > 0 ? `Peti ${appVersion}` : copy.version;
   deviceBackLabel.textContent = copy.deviceBack;
@@ -1449,6 +1453,7 @@ function renderGithub(view: GithubView | null, note: string): void {
   githubNote.textContent = displayText(note);
   githubButton.hidden = !view && note === NOT_RUN;
   paintGithubButton(connected);
+  paintClientRow();
   armGithubPoll(!connected && view?.userCode ? view : null);
   paintDeviceFlow();
 }
@@ -1662,6 +1667,35 @@ themeSection.append(languageField, themeBlock);
 const githubSection = settingsBlock("GitHub");
 githubSection.append(githubBlock);
 
+const clientRow = settingsBlock(copy.clientIdTitle);
+const clientField = document.createElement("input");
+clientField.type = "text";
+clientField.autocomplete = "off";
+clientField.spellcheck = false;
+clientField.className = "settings-input";
+clientField.setAttribute("aria-label", copy.clientIdTitle);
+const clientHint = document.createElement("p");
+clientHint.className = "settings-hint";
+clientHint.textContent = copy.clientIdHint;
+clientRow.append(clientField, clientHint);
+
+function paintClientRow(): void {
+  clientRow.hidden = clientField.value.trim().length === 0 && githubNoteRaw !== UNPREPARED;
+}
+
+function saveClientId(): void {
+  settingsNote.textContent = "";
+  void invoke("set_github_client_id", { clientId: clientField.value })
+    .then(() => {
+      paintClientRow();
+    })
+    .catch((err: unknown) => {
+      settingsNote.textContent = displayText(typeof err === "string" ? err : UNPREPARED);
+    });
+}
+
+clientField.addEventListener("change", saveClientId);
+
 const settingsFoot = document.createElement("footer");
 settingsFoot.className = "settings-foot";
 const settingsVersion = document.createElement("span");
@@ -1808,7 +1842,7 @@ function paintDeviceFlow(): void {
   }
 }
 
-settingsPage.append(deviceFlow, folderSection, themeSection, githubSection, settingsNote, settingsFoot);
+settingsPage.append(deviceFlow, folderSection, themeSection, githubSection, clientRow, settingsNote, settingsFoot);
 
 content.append(
   pageHead,
@@ -2560,6 +2594,10 @@ function loadAppSettings(): void {
       }
       downloadConcurrency = body.concurrency;
       paintDownloadFolder(body.defaultFolder);
+      if (document.activeElement !== clientField) {
+        clientField.value = body.githubClientId;
+      }
+      paintClientRow();
       if (!languageTouched && parseLocale(body.language) !== locale) {
         applyLocale(parseLocale(body.language));
       }
